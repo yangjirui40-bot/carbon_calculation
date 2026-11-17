@@ -12,6 +12,14 @@ from .supply_chain import (
     SupplyChainEdge,
 )
 from .billing import Plan, Subscription
+from .olap import (
+    DimCategory,
+    DimCompany,
+    DimPeriod,
+    DimSupplier,
+    FactCompanyEmission,
+    FactEmission,
+)
 
 __all__ = [
     "TimestampMixin",

@@ -209,7 +209,10 @@ def seed() -> None:
         product = _seed_product(db, company)
         _seed_supply_chain(db, company)
         _run_demo_calculations(db, company, product)
-        print("种子数据完成。默认管理员：admin / admin123（演示企业已订阅：专业成长版）")
+        # 构建 OLAP 星型模型（维度 + 事实表）
+        from .services.olap import refresh_olap
+        refresh_olap(db)
+        print("种子数据完成。默认管理员：admin / admin123（演示企业已订阅：专业成长版；OLAP 星型模型已构建）")
     finally:
         db.close()
 

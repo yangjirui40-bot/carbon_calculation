@@ -286,6 +286,12 @@ def review_document(doc_id: int, payload: ReviewRequest, db: Session = Depends(g
     doc.review_note = payload.note
     db.commit()
     db.refresh(doc)
+    if payload.review_status == "confirmed":
+        try:
+            from ..services.olap import refresh_olap
+            refresh_olap(db)
+        except Exception:  # noqa: BLE001
+            db.rollback()
     return {**_to_dict(doc), "duplicate_hint": duplicate_hint,
             "verify_hint": "单据未经发票验真（unverified），建议先调用 /verify 查验" if doc.verified_status == "unverified" else None}
 

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import get_current_user, require_roles, ROLE_ADMIN, ROLE_AUDITOR
+from ..deps import get_current_user, require_admin, require_roles, ROLE_ADMIN, ROLE_AUDITOR
 from ..models import Job, User
 from ..services.ai import layout as layout_ai
 from ..services.ai import sbert as sbert_ai
@@ -71,3 +71,43 @@ def list_jobs(db: Session = Depends(get_db),
          "created_at": j.created_at.isoformat() if j.created_at else None}
         for j in jobs
     ]
+
+
+@router.post("/olap/refresh")
+def olap_refresh(db: Session = Depends(get_db), _: User = Depends(require_admin)):
+    """重建 OLAP 星型模型（维度 upsert + 事实表全量刷新）。"""
+    from ..services.olap import refresh_olap
+
+    return refresh_olap(db)
+
+
+@router.get("/schema")
+def schema_info(_: User = Depends(get_current_user)):
+    """数据建模说明：OLTP 业务层 3NF + OLAP 分析层星型建模。"""
+    from ..database import Base
+    from sqlalchemy import inspect as sa_inspect
+    from ..database import engine
+
+    insp = sa_inspect(engine)
+    oltp = [t for t in sorted(insp.get_table_names())
+            if not t.startswith(("dim_", "fact_", "alembic"))]
+    olap_tables = [t for t in sorted(insp.get_table_names())
+                   if t.startswith(("dim_", "fact_"))]
+    return {
+        "modeling": {
+            "OLTP": {
+                "范式": "第三范式（3NF）：每表单一事实来源、非主属性完全依赖主键且无传递依赖；"
+                        "企业与业务实体通过外键引用（companies/emission_factors 为维度，"
+                        "business_records/calculation_runs 为事务）；JSON 列仅用于加密快照与审计留痕。",
+                "表数": len(oltp),
+                "表": oltp,
+            },
+            "OLAP": {
+                "建模": "星型建模（Star Schema）：事实表处于中心，外键指向维度表（代理键），"
+                        "驾驶舱聚合查询全部走事实表，实现读写分离与多维聚合。",
+                "维度表": [t for t in olap_tables if t.startswith("dim_")],
+                "事实表": [t for t in olap_tables if t.startswith("fact_")],
+                "ETL": "POST /api/v1/system/olap/refresh（种子/记录变更自动触发）",
+            },
+        }
+    }

@@ -34,7 +34,16 @@ def create_record(payload: RecordCreate, db: Session = Depends(get_db), user: Us
     db.add(r)
     db.commit()
     db.refresh(r)
+    _refresh_olap_safe(db)
     return _to_dict(r)
+
+
+def _refresh_olap_safe(db) -> None:
+    try:
+        from ..services.olap import refresh_olap
+        refresh_olap(db)
+    except Exception:  # noqa: BLE001
+        db.rollback()
 
 
 @router.get("")
@@ -97,6 +106,7 @@ async def import_records(company_id: int, file: UploadFile = File(...),
         db.add(rec)
         created += 1
     db.commit()
+    _refresh_olap_safe(db)
     return {"imported": created, "total_rows": len(rows)}
 
 
@@ -108,3 +118,4 @@ def delete_record(record_no: str, db: Session = Depends(get_db), user: User = De
     check_company_access(db, user, r.company_id, write=True)
     db.delete(r)
     db.commit()
+    _refresh_olap_safe(db)

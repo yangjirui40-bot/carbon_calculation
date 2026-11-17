@@ -216,6 +216,22 @@ def run_tests(client):
     r = client.get("/api/v1/system/ai-status", headers=h)
     check("AI 引擎状态", r.status_code == 200 and "layoutlmv3" in r.json(), r.text)
 
+    print("=== OLAP 星型模型 ===")
+    r = client.post("/api/v1/system/olap/refresh", headers=h)
+    check("星型模型刷新", r.status_code == 200 and r.json()["fact_company_emission_rows"] >= 1, r.text[:160])
+    r = client.get("/api/v1/system/schema", headers=h)
+    schema = r.json()
+    check("建模说明（OLTP 3NF + OLAP 星型）", r.status_code == 200
+          and "OLTP" in schema["modeling"] and "OLAP" in schema["modeling"], str(schema)[:200])
+    check("星型维度/事实表齐全",
+          set(schema["modeling"]["OLAP"]["维度表"]) == {"dim_category", "dim_company", "dim_period", "dim_supplier"}
+          and set(schema["modeling"]["OLAP"]["事实表"]) == {"fact_company_emission", "fact_emission"},
+          str(schema["modeling"]["OLAP"]))
+    # 驾驶舱汇总与 OLAP 事实表一致（星型查询生效）
+    r = client.get(f"/api/v1/dashboard/company/{company1}/summary", headers=h)
+    s = r.json()
+    check("驾驶舱走星型聚合（period 字段来自维度表）", r.status_code == 200 and "period" in s and s["total_kgco2e"] > 0, str(s)[:160])
+
 
 with TestClient(app) as client:
     run_tests(client)

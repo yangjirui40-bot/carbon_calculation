@@ -27,6 +27,12 @@ def _factor_value(db, factor_id: str) -> float:
 
 
 def get_summary(db, company_id: int) -> dict:
+    """星型模型优先（OLAP 聚合），未构建时回退 OLTP 核算结果。"""
+    from . import olap as olap_svc
+
+    star = olap_svc.star_summary(db, company_id)
+    if star:
+        return star
     run = _latest_run(db, company_id)
     if not run or not run.result:
         return {"total_kgco2e": 0.0, "scope_breakdown": {"scope1": 0.0, "scope2": 0.0, "scope3": 0.0}}
@@ -39,7 +45,22 @@ def get_summary(db, company_id: int) -> dict:
 
 
 def get_ring(db, company_id: int) -> dict:
-    """环形图：三大范围占比 + 子类别拆分。"""
+    """环形图：三大范围占比 + 子类别拆分（星型模型优先）。"""
+    from . import olap as olap_svc
+
+    star_cats = olap_svc.star_ring(db, company_id)
+    if star_cats is not None:
+        run = _latest_run(db, company_id)
+        s = get_summary(db, company_id)
+        breakdown = s.get("scope_breakdown", {})
+        total = s.get("total_kgco2e", 0.0) or 1.0
+        scope_names = {"scope1": "范围1 直接排放", "scope2": "范围2 间接排放(能源)", "scope3": "范围3 价值链排放"}
+        scopes = [
+            {"scope": k, "name": scope_names.get(k, k), "emissions_kgco2e": round(breakdown.get(k, 0.0), 6),
+             "ratio": round(breakdown.get(k, 0.0) / total, 6)}
+            for k in ("scope1", "scope2", "scope3")
+        ]
+        return {"scopes": scopes, "categories": star_cats}
     run = _latest_run(db, company_id)
     if not run or not run.result:
         return {"scopes": [], "categories": []}
@@ -131,8 +152,14 @@ def _period_series(db, company_id: int) -> list[dict]:
 
 
 def get_trend(db, company_id: int, forecast_months: int = 6) -> dict:
-    """时序趋势：历史曲线 + 线性外推预测 + 减排红线。"""
-    series = _period_series(db, company_id)
+    """时序趋势：历史曲线 + 线性外推预测 + 减排红线（星型模型优先）。"""
+    from . import olap as olap_svc
+
+    star = olap_svc.star_trend(db, company_id)
+    if star is not None:
+        series = star
+    else:
+        series = _period_series(db, company_id)
     historical = series
     totals = [s["total"] for s in series]
 
@@ -161,7 +188,12 @@ def get_trend(db, company_id: int, forecast_months: int = 6) -> dict:
 
 
 def get_drilldown(db, company_id: int) -> dict:
-    """多维度下钻：按范围/类别汇总，并附明细记录。"""
+    """多维度下钻：按范围/类别汇总，并附明细记录（星型模型优先）。"""
+    from . import olap as olap_svc
+
+    star = olap_svc.star_drilldown(db, company_id)
+    if star is not None:
+        return star
     records = (
         db.query(BusinessRecord)
         .filter(BusinessRecord.company_id == company_id, BusinessRecord.review_status == "confirmed")
