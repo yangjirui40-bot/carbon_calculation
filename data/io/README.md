@@ -30,9 +30,20 @@
 
 ## 42 部门直接排放强度 g（kgCO2e/万元产出）
 
-来源：CEADs 分行业 CO2 排放清单（按 42 部门对齐）。保存为 `g_2017.csv`：
-`部门名,kgco2e_per_wan`（42 行）。未提供时，`run_eiolca_42` 只输出矩阵与乘数诊断，
-不输出排放量（避免用合成参数冒充官方结果）。
+来源：**CEADs 分行业 CO2 排放清单**（注册后可下载）：
+`https://www.ceads.net/data/nation/`（“CO2 emission inventories” / 分行业二氧化碳排放清单，
+如 Shan et al., Scientific Data 2020 的 1997-2017 年 45 行业清单）。
+
+下载后按 42 部门对齐保存为 `g_2017.csv`（格式：`部门名,kgco2e_per_wan`，共 42 行，
+部门顺序与 `SECTORS_42` 一致），然后调用：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/factors/derive-from-io -H "Authorization: Bearer <token>"
+```
+
+系统将自动计算完全排放强度 f = g(I-A)⁻¹，写入官方 Scope 3 因子
+（version=official-eiolca-2017），核算接口传 `factor_set` 即可使用。
+未提供 g 时，`run_eiolca_42` 只输出矩阵与乘数诊断，不输出排放量（避免用合成参数冒充官方结果）。
 
 ## 合规声明
 

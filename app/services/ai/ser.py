@@ -21,7 +21,7 @@ def _model_cached(model_id: str) -> bool:
     import os
 
     name = "models--" + model_id.replace("/", "--")
-    path = os.path.join(settings.MODELS_CACHE_DIR, name)
+    path = os.path.join(settings.models_cache_path, name)
     return os.path.isdir(path) and bool(os.listdir(path))
 
 
@@ -33,26 +33,18 @@ def _get_engine():
         _load_error = f"模型未下载：{settings.SER_MODEL}（运行 python -m app.services.ai.provision 下载）"
         return None
     try:
-        import detectron2  # noqa: F401  # LayoutLMv2 视觉骨干必需
-    except ImportError:
-        _load_error = (
-            "当前模型为 LayoutLMv2 架构，需要 detectron2（Windows 不可用）；"
-            "请使用 LayoutLMv3 系列微调模型（见 train_ser.py）"
-        )
-        return None
-    try:
         import os
 
         os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
-        os.environ.setdefault("HF_HOME", settings.MODELS_CACHE_DIR)
+        os.environ.setdefault("HF_HOME", settings.models_cache_path)
         import torch  # noqa: F401
         from transformers import AutoModelForTokenClassification, AutoProcessor
 
         processor = AutoProcessor.from_pretrained(
-            settings.SER_MODEL, cache_dir=settings.MODELS_CACHE_DIR, apply_ocr=False
+            settings.SER_MODEL, cache_dir=settings.models_cache_path, apply_ocr=False
         )
         model = AutoModelForTokenClassification.from_pretrained(
-            settings.SER_MODEL, cache_dir=settings.MODELS_CACHE_DIR
+            settings.SER_MODEL, cache_dir=settings.models_cache_path
         )
         model.eval()
         _engine = SEREngine(processor, model)
@@ -79,14 +71,14 @@ def ser_load_error() -> str | None:
 
 
 class SEREngine:
-    name = "LayoutXLM-SER(XFUND-zh)"
+    name = "LayoutLMv3-SER(XFUND-zh)"
 
     def __init__(self, processor, model):
         self.processor = processor
         self.model = model
         self.tokenizer = processor.tokenizer
         self.image_processor = processor.image_processor
-        self.labels = model.config.id2label
+        self.labels = {str(k): v for k, v in (model.config.id2label or {}).items()}
 
     def _forward_labels(self, image, texts, boxes):
         import torch

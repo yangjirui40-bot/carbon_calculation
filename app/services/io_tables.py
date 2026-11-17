@@ -113,4 +113,57 @@ def run_eiolca_42(category_amounts: dict[str, float], g: list[float] | None = No
     return {**result, "mapping": mapping_used, "domestic_adjusted": system["domestic_adjusted"]}
 
 
+def load_g(path: str | None = None) -> list[float]:
+    """加载 42 部门直接排放强度 g（kgCO2e/万元产出）。
+
+    g_2017.csv 格式：部门名,kgco2e_per_wan（42 行，部门顺序与 SECTORS_42 一致）。
+    """
+    import csv
+
+    path = Path(path) if path else IO_DIR / "g_2017.csv"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"部门直接排放强度清单不存在：{path}。来源：CEADs 分行业 CO2 排放清单"
+            "（https://www.ceads.net/data/nation/，注册后可下载），"
+            "按 42 部门对齐后保存为 g_2017.csv。"
+        )
+    mapping = {}
+    for row in csv.DictReader(open(path, encoding="utf-8-sig")):
+        name = (row.get("部门名") or row.get("sector") or "").strip()
+        val = row.get("kgco2e_per_wan") or row.get("g")
+        if name and val:
+            mapping[name] = float(val)
+    g = []
+    for name in SECTORS_42:
+        if name not in mapping:
+            raise ValueError(f"g_2017.csv 缺少部门：{name}")
+        g.append(mapping[name])
+    return g
+
+
+def derive_scope3_factors(g: list[float] | None = None, path: str | None = None) -> dict:
+    """由真实 42 部门表 + g 推导完全排放强度 f = g(I-A)⁻¹，并映射到平台业务类别。
+
+    返回 {category: {sector, f_kgco2e_per_wan, f_kgco2e_per_cny}}，用于生成官方 Scope 3 因子
+    （1 万元 = 10000 CNY → kgCO2e/CNY = f_wan / 10000）。
+    """
+    g = g if g is not None else load_g(path)
+    system = build_system()
+    A = np.array(system["A"])
+    sectors = system["sectors"]
+    L = np.linalg.inv(np.eye(42) - A)
+    f = np.asarray(g) @ L  # kgCO2e/万元产出
+    out = {}
+    for category, targets in CATEGORY_TO_SECTOR.items():
+        idx = next((sectors.index(n) for n in targets if n in sectors), None)
+        if idx is None:
+            continue
+        out[category] = {
+            "sector": sectors[idx],
+            "f_kgco2e_per_wan": round(float(f[idx]), 6),
+            "f_kgco2e_per_cny": round(float(f[idx]) / 10000.0, 10),
+        }
+    return out
+
+
 __all__ = ["SECTORS_42", "CATEGORY_TO_SECTOR", "load_table", "build_system", "run_eiolca_42"]

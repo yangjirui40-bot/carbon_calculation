@@ -69,8 +69,11 @@ class Settings(BaseSettings):
     # OCR 引擎：rapidocr(真实) | layoutlmv3(真实多模态，需模型已下载) | mock
     OCR_ENGINE: str = "rapidocr"
     LAYOUT_MODEL: str = "microsoft/layoutlmv3-base-chinese"
-    # 中文表单关键信息抽取（KIE）微调模型（LayoutXLM SER，XFUND-zh）
-    SER_MODEL: str = "Wulolo/layoutxlm-finetuned-xfund-zh"
+    # 中文表单关键信息抽取（KIE）微调模型（LayoutLMv3 SER，XFUND-zh）
+    SER_MODEL: str = "yuyijiong/layoutlmv3-base-chinese-xfund"
+    # SER 是否启用：公开中文 SER 检查点质量不足（全部预测 I-QUESTION），默认关闭；
+    # 按 train_ser.py 完成自有数据微调后置 true 并填入 SER_MODEL 即可启用真实字段级抽取。
+    SER_ENABLED: bool = False
     SBERT_MODEL: str = "BAAI/bge-small-zh-v1.5"
     # POMDP-LLM 大模型适配（OpenAI 兼容接口，如 DeepSeek；未配置时使用规则推理引擎）
     LLM_API_BASE: str = ""
@@ -86,6 +89,13 @@ class Settings(BaseSettings):
     @property
     def factor_csv_path(self) -> str:
         p = Path(self.FACTOR_CSV)
+        if not p.is_absolute():
+            p = BASE_DIR / p
+        return str(p)
+
+    @property
+    def models_cache_path(self) -> str:
+        p = Path(self.MODELS_CACHE_DIR)
         if not p.is_absolute():
             p = BASE_DIR / p
         return str(p)

@@ -187,9 +187,15 @@ def layout_extract(image_bytes: bytes, words: list[dict]) -> dict | None:
 
 
 def ser_extract(image_bytes: bytes, words: list[dict]) -> list[dict] | None:
-    """LayoutXLM SER 微调模型关键信息抽取（问题-答案键值对）。"""
+    """LayoutLMv3 SER 微调模型关键信息抽取（问题-答案键值对）。
+
+    仅在 SER_ENABLED=true 且模型可用时启用（公开中文 SER 检查点质量不足时保持关闭）。
+    """
+    from ..config import settings
     from .ai import ser as ser_ai
 
+    if not getattr(settings, "SER_ENABLED", False):
+        return None
     if not ser_ai.ser_available():
         return None
     try:

@@ -7,12 +7,41 @@ POMDP 引擎使用内置确定性勾稽规则（离线可用），配置后自�
 from __future__ import annotations
 
 import json
+import time
 
 import httpx
 
 from ...config import settings
 
 _client: httpx.Client | None = None
+_check_cache: dict = {"at": 0.0, "result": None}
+
+
+def check_llm() -> dict:
+    """校验 LLM 配置可用性（结果缓存 10 分钟）：{enabled, valid, message}。"""
+    now = time.time()
+    if now - _check_cache["at"] < 600 and _check_cache["result"] is not None:
+        return _check_cache["result"]
+    if not settings.llm_enabled:
+        result = {"enabled": False, "valid": None, "message": "未配置 LLM_API_BASE/LLM_API_KEY（使用内置勾稽规则引擎）"}
+    else:
+        try:
+            resp = httpx.post(
+                f"{settings.LLM_API_BASE.rstrip('/')}/chat/completions",
+                headers={"Authorization": f"Bearer {settings.LLM_API_KEY}"},
+                json={"model": settings.LLM_MODEL,
+                      "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1},
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                result = {"enabled": True, "valid": True, "message": f"LLM 可用（{settings.LLM_MODEL}）"}
+            else:
+                result = {"enabled": True, "valid": False,
+                          "message": f"LLM 校验失败（HTTP {resp.status_code}）：{resp.text[:160]}"}
+        except Exception as exc:  # noqa: BLE001
+            result = {"enabled": True, "valid": False, "message": f"LLM 连接失败：{exc}"}
+    _check_cache.update(at=now, result=result)
+    return result
 
 
 def _get_client() -> httpx.Client | None:
@@ -74,4 +103,4 @@ def llm_correct_fields(fields: dict, conflicts: list[dict]) -> dict | None:
         return None
 
 
-__all__ = ["chat", "llm_correct_fields"]
+__all__ = ["chat", "llm_correct_fields", "check_llm"]

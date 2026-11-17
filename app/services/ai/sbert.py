@@ -20,19 +20,18 @@ def _get_engine():
         return _engine
     import os
 
+    cache = settings.models_cache_path
     name = "models--" + settings.SBERT_MODEL.replace("/", "--")
-    if not (os.path.isdir(os.path.join(settings.MODELS_CACHE_DIR, name)) and
-            os.listdir(os.path.join(settings.MODELS_CACHE_DIR, name))):
+    if not (os.path.isdir(os.path.join(cache, name)) and
+            os.listdir(os.path.join(cache, name))):
         _load_error = f"模型未下载：{settings.SBERT_MODEL}"
         return None
     try:
-        import os
-
         os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
-        os.environ.setdefault("HF_HOME", settings.MODELS_CACHE_DIR)
+        os.environ.setdefault("HF_HOME", cache)
         from sentence_transformers import SentenceTransformer
 
-        model = SentenceTransformer(settings.SBERT_MODEL, cache_folder=settings.MODELS_CACHE_DIR)
+        model = SentenceTransformer(settings.SBERT_MODEL, cache_folder=cache)
         _engine = SBERTEngine(model)
     except Exception as exc:  # noqa: BLE001
         _load_error = f"{type(exc).__name__}: {exc}"
@@ -43,7 +42,7 @@ def model_cached() -> bool:
     import os
 
     name = "models--" + settings.SBERT_MODEL.replace("/", "--")
-    path = os.path.join(settings.MODELS_CACHE_DIR, name)
+    path = os.path.join(settings.models_cache_path, name)
     return os.path.isdir(path) and bool(os.listdir(path))
 
 

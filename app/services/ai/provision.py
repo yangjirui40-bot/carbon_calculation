@@ -15,8 +15,8 @@ def provision() -> dict:
     from app.config import settings
 
     os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
-    os.environ.setdefault("HF_HOME", settings.MODELS_CACHE_DIR)
-    os.makedirs(settings.MODELS_CACHE_DIR, exist_ok=True)
+    os.environ.setdefault("HF_HOME", settings.models_cache_path)
+    os.makedirs(settings.models_cache_path, exist_ok=True)
 
     report = {}
     try:
@@ -30,7 +30,7 @@ def provision() -> dict:
             try:
                 path = snapshot_download(
                     repo_id=model,
-                    cache_dir=settings.MODELS_CACHE_DIR,
+                    cache_dir=settings.models_cache_path,
                     local_files_only=False,
                 )
                 report[name] = {"model": model, "ok": True, "path": path}

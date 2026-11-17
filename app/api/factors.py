@@ -81,6 +81,44 @@ def get_factor(factor_id: str, db: Session = Depends(get_db), _: User = Depends(
     return _to_dict(f)
 
 
+@router.post("/derive-from-io")
+def derive_scope3_from_io(db: Session = Depends(get_db), _: User = Depends(require_admin)):
+    """由真实 42 部门表 + CEADs CO2 清单（g_2017.csv）推导官方 Scope 3 采购因子。
+
+    前置：data/io/io2017_42sector.csv（真实表，已就绪）与 data/io/g_2017.csv
+    （CEADs 分行业 CO2 排放清单按 42 部门对齐，获取步骤见 data/io/README.md）。
+    """
+    from fastapi import HTTPException
+
+    from ..services.io_tables import derive_scope3_factors
+
+    try:
+        derived = derive_scope3_factors()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    inserted = []
+    for category, d in derived.items():
+        fid = f"MEE_SCOPE3_{category.upper()}_2017"
+        factor = db.query(EmissionFactor).filter(EmissionFactor.factor_id == fid).first()
+        if factor is None:
+            factor = EmissionFactor(factor_id=fid, category=category,
+                                    scope=_CATEGORY_SCOPE.get(category, "scope3"))
+            db.add(factor)
+        factor.value = d["f_kgco2e_per_cny"]
+        factor.unit = "kgCO2e/CNY"
+        factor.version = "official-eiolca-2017"
+        factor.origin = "CEADs 2017 年投入产出表 + 分行业 CO2 排放清单，f=g(I-A)⁻¹ 推导"
+        factor.is_demo = False
+        factor.uncertainty_pct = 15.0
+        factor.description = f"部门：{d['sector']}；完全排放强度 {d['f_kgco2e_per_wan']} kgCO2e/万元"
+        inserted.append({**d, "factor_id": fid})
+    db.commit()
+    return {"derived": inserted}
+
+
 @router.post("/import", status_code=201)
 async def import_factors(file: UploadFile = File(...), db: Session = Depends(get_db),
                          _: User = Depends(require_admin)):

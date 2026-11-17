@@ -1,0 +1,10 @@
+# Caddy 反向代理（自动 HTTPS）。
+# 用法：docker run -d --name caddy -p 80:80 -p 443:443 \
+#        -v $PWD/deploy/Caddyfile:/etc/caddy/Caddyfile caddy
+# 将 your.domain.com 替换为已解析到服务器的域名即可自动签发 Let's Encrypt 证书。
+# 无域名时删除 tls 行为 HTTP 模式（生产勿用）。
+
+your.domain.com {
+    encode gzip
+    reverse_proxy backend:8000
+}

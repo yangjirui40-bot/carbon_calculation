@@ -23,24 +23,23 @@ def _get_engine():
         return _engine
     import os
 
+    cache = settings.models_cache_path
     name = "models--" + settings.LAYOUT_MODEL.replace("/", "--")
-    if not (os.path.isdir(os.path.join(settings.MODELS_CACHE_DIR, name)) and
-            os.listdir(os.path.join(settings.MODELS_CACHE_DIR, name))):
+    if not (os.path.isdir(os.path.join(cache, name)) and
+            os.listdir(os.path.join(cache, name))):
         _load_error = f"模型未下载：{settings.LAYOUT_MODEL}"
         return None
     try:
-        import os
-
         os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
-        os.environ.setdefault("HF_HOME", settings.MODELS_CACHE_DIR)
+        os.environ.setdefault("HF_HOME", cache)
         import torch  # noqa: F401
         from transformers import AutoModel, AutoProcessor
 
         processor = AutoProcessor.from_pretrained(
-            settings.LAYOUT_MODEL, cache_dir=settings.MODELS_CACHE_DIR, apply_ocr=False
+            settings.LAYOUT_MODEL, cache_dir=cache, apply_ocr=False
         )
         model = AutoModel.from_pretrained(
-            settings.LAYOUT_MODEL, cache_dir=settings.MODELS_CACHE_DIR
+            settings.LAYOUT_MODEL, cache_dir=cache
         )
         model.eval()
         _engine = LayoutEngine(processor, model)
@@ -53,7 +52,7 @@ def model_cached() -> bool:
     import os
 
     name = "models--" + settings.LAYOUT_MODEL.replace("/", "--")
-    path = os.path.join(settings.MODELS_CACHE_DIR, name)
+    path = os.path.join(settings.models_cache_path, name)
     return os.path.isdir(path) and bool(os.listdir(path))
 
 

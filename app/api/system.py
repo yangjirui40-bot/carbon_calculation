@@ -34,7 +34,8 @@ def ai_status(_: User = Depends(get_current_user)):
             "model": settings.SER_MODEL,
             "provisioned": ser_ai.model_cached(),
             "loaded": ser_ai.is_loaded(),
-            "error": ser_ai.ser_load_error(),
+            "enabled": getattr(settings, "SER_ENABLED", False),
+            "note": "公开中文 SER 检查点质量不足，默认关闭；按 train_ser.py 自有数据微调后启用",
         },
         "sbert": {
             "model": settings.SBERT_MODEL,
@@ -44,6 +45,7 @@ def ai_status(_: User = Depends(get_current_user)):
         "llm": {
             "enabled": settings.llm_enabled,
             "model": settings.LLM_MODEL,
+            "check": llm_ai.check_llm(),
             "note": "未配置 LLM_API_BASE/LLM_API_KEY 时 POMDP 使用内置勾稽规则引擎",
         },
     }

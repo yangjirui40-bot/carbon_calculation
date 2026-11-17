@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -105,40 +106,43 @@ def run_tests(client):
         check(f"驾驶舱 {ep}", r.status_code == 200, r.text)
 
     print("=== 真实 OCR 票据识别流水线 ===")
-    invoice = BACKEND / "tests" / "fixtures" / "invoice_demo.png"
-    if not invoice.exists():
-        from tests.make_invoice import make_invoice
-        make_invoice(invoice)
-    with open(invoice, "rb") as f:
-        img_bytes = f.read()
-    r = client.post("/api/v1/documents/upload", headers=h,
-                    params={"company_id": company1, "doc_type": "invoice"},
-                    files={"file": ("invoice_demo.png", img_bytes, "image/png")})
-    check("单据上传", r.status_code == 201, r.text)
-    doc_id = r.json()["id"]
-    # 重复上传拦截（唯一性）
-    r = client.post("/api/v1/documents/upload", headers=h,
-                    params={"company_id": company1, "doc_type": "invoice"},
-                    files={"file": ("invoice_demo.png", img_bytes, "image/png")})
-    check("重复单据拦截（内容哈希）", r.status_code == 201 and "重复" in (r.json().get("duplicate_hint") or ""), r.text[:160])
-    r = client.post(f"/api/v1/documents/{doc_id}/parse", headers=h, params={"wait": True})
-    body = r.json()
-    check("异步解析任务完成", r.status_code == 200 and body.get("parse_status") == "parsed", str(body)[:300])
-    fields = ((body.get("extracted_fields") or {}).get("fields") or {}) if isinstance(body.get("extracted_fields"), dict) else {}
-    check("OCR 抽出字段", len(fields) >= 3, str(fields))
-    check("引擎含真实 OCR", "OCR" in (body.get("ocr_engine") or ""), str(body.get("ocr_engine")))
-    # 发票验真（未配置查验 API → unverified 状态）
-    r = client.post(f"/api/v1/documents/{doc_id}/verify", headers=h)
-    check("发票验真状态", r.status_code == 200 and r.json()["verified_status"] == "unverified", r.text[:160])
-    # 人工复核队列
-    r = client.get("/api/v1/documents/review-queue", headers=h, params={"company_id": company1})
-    check("人工复核队列", r.status_code == 200 and isinstance(r.json().get("queue"), list), r.text[:160])
-    # 复核入库（人工修正字段 + 备注）
-    r = client.post(f"/api/v1/documents/{doc_id}/review", headers=h,
-                    json={"review_status": "confirmed",
-                          "fields_override": {"total_amount": 11300.0},
-                          "note": "人工复核确认"})
-    check("复核入库（含人工修正与验真提示）", r.status_code == 201 and r.json().get("reviewed_by_user_id") is not None, r.text[:160])
+    if os.environ.get("SKIP_OCR") == "1":
+        print("  [SKIP] CI 环境跳过 OCR 流水线（SKIP_OCR=1）")
+    else:
+        invoice = BACKEND / "tests" / "fixtures" / "invoice_demo.png"
+        if not invoice.exists():
+            from tests.make_invoice import make_invoice
+            make_invoice(invoice)
+        with open(invoice, "rb") as f:
+            img_bytes = f.read()
+        r = client.post("/api/v1/documents/upload", headers=h,
+                        params={"company_id": company1, "doc_type": "invoice"},
+                        files={"file": ("invoice_demo.png", img_bytes, "image/png")})
+        check("单据上传", r.status_code == 201, r.text)
+        doc_id = r.json()["id"]
+        # 重复上传拦截（唯一性）
+        r = client.post("/api/v1/documents/upload", headers=h,
+                        params={"company_id": company1, "doc_type": "invoice"},
+                        files={"file": ("invoice_demo.png", img_bytes, "image/png")})
+        check("重复单据拦截（内容哈希）", r.status_code == 201 and "重复" in (r.json().get("duplicate_hint") or ""), r.text[:160])
+        r = client.post(f"/api/v1/documents/{doc_id}/parse", headers=h, params={"wait": True})
+        body = r.json()
+        check("异步解析任务完成", r.status_code == 200 and body.get("parse_status") == "parsed", str(body)[:300])
+        fields = ((body.get("extracted_fields") or {}).get("fields") or {}) if isinstance(body.get("extracted_fields"), dict) else {}
+        check("OCR 抽出字段", len(fields) >= 3, str(fields))
+        check("引擎含真实 OCR", "OCR" in (body.get("ocr_engine") or ""), str(body.get("ocr_engine")))
+        # 发票验真（未配置查验 API → unverified 状态）
+        r = client.post(f"/api/v1/documents/{doc_id}/verify", headers=h)
+        check("发票验真状态", r.status_code == 200 and r.json()["verified_status"] == "unverified", r.text[:160])
+        # 人工复核队列
+        r = client.get("/api/v1/documents/review-queue", headers=h, params={"company_id": company1})
+        check("人工复核队列", r.status_code == 200 and isinstance(r.json().get("queue"), list), r.text[:160])
+        # 复核入库（人工修正字段 + 备注）
+        r = client.post(f"/api/v1/documents/{doc_id}/review", headers=h,
+                        json={"review_status": "confirmed",
+                              "fields_override": {"total_amount": 11300.0},
+                              "note": "人工复核确认"})
+        check("复核入库（含人工修正与验真提示）", r.status_code == 201 and r.json().get("reviewed_by_user_id") is not None, r.text[:160])
 
     print("=== 官方因子库与因子集 ===")
     r = client.get("/api/v1/factors/sets", headers=h)

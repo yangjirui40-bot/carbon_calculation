@@ -1,0 +1,31 @@
+# 告警规则：P95 延迟 / 5xx 比例 / 队列积压
+groups:
+  - name: carbonspeed
+    rules:
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum by (le) (rate(carbonspeed_http_latency_seconds_bucket{method="GET"}[5m]))) > 0.5
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "GET 接口 P95 延迟超过 500ms（{{ $value }}s）"
+
+      - alert: HighErrorRate
+        expr: sum(rate(carbonspeed_http_requests_total{status=~"5.."}[5m])) / sum(rate(carbonspeed_http_requests_total[5m])) > 0.05
+        for: 3m
+        labels: {severity: critical}
+        annotations:
+          summary: "5xx 错误率超过 5%（当前 {{ $value }}）"
+
+      - alert: JobQueueBacklog
+        expr: carbonspeed_job_queue_depth > 50
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "任务队列积压超过 50（当前 {{ $value }}）"
+
+      - alert: ParseLatencyHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(carbonspeed_parse_seconds_bucket[30m]))) > 300
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "单据解析 P95 超过 300 秒（模型冷启动/负载过高，当前 {{ $value }}s）"

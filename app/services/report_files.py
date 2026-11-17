@@ -128,7 +128,7 @@ def iso14064_xml(content: dict) -> bytes:
 
 
 def pcf_xml(content: dict) -> bytes:
-    """ISO 14067 / CBAM 兼容 XML 数据包。"""
+    """ISO 14067 / CBAM 兼容 XML 数据包（含 CBAM 申报扩展字段）。"""
     root = ET.Element("ProductCarbonFootprint", {"standard": content.get("standard", "ISO 14067:2018"),
                                                  "cbam_compatible": "true",
                                                  "generated_at": content.get("generated_at", "")})
@@ -140,6 +140,13 @@ def pcf_xml(content: dict) -> bytes:
     em = ET.SubElement(root, "Emissions")
     ET.SubElement(em, "TotalUpstream", {"unit": "kgCO2e"}).text = str(content.get("total_upstream_emissions_kgco2e"))
     ET.SubElement(em, "PerUnit", {"unit": str(content.get("unit_label", ""))}).text = str(content.get("unit_product_emissions_kgco2e"))
+    # CBAM 申报扩展字段（企业/装置信息与能源拆分，数据缺失时为空）
+    cbam = ET.SubElement(root, "CBAMDeclaration")
+    ET.SubElement(cbam, "InstallationName").text = str((content.get("cbam") or {}).get("installation", "") or "")
+    ET.SubElement(cbam, "ProductionProcess").text = str((content.get("cbam") or {}).get("process", "") or "")
+    ET.SubElement(cbam, "DirectEmissions", {"unit": "kgCO2e"}).text = str((content.get("cbam") or {}).get("direct_emissions", "") or "")
+    ET.SubElement(cbam, "IndirectEmissions", {"unit": "kgCO2e"}).text = str((content.get("cbam") or {}).get("indirect_emissions", "") or "")
+    ET.SubElement(cbam, "ElectricityConsumed", {"unit": "kWh"}).text = str((content.get("cbam") or {}).get("electricity_kwh", "") or "")
     et_b = ET.SubElement(root, "Boundary")
     ET.SubElement(et_b, "SystemBoundary").text = str(content.get("boundary", ""))
     items = ET.SubElement(root, "BomItems")
