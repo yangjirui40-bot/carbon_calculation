@@ -163,13 +163,25 @@ def supply_chain_report(company_id: int, db: Session = Depends(get_db), user: Us
     nodes, edges = _graph_data(db, company_id)
     hm = compute_heatmap(nodes, edges, k=2)
     stats = hm.get("statistics", {})
+    quotas = [
+        {"id": q.id, "supplier_id": q.supplier_id, "year": q.year,
+         "allocated_quota": q.allocated_quota, "used_quota": q.used_quota,
+         "remaining": round(q.allocated_quota - q.used_quota, 4)}
+        for q in db.query(CarbonQuota).filter(CarbonQuota.company_id == company_id).all()
+    ]
+    plans = [
+        {"plan_id": p.plan_id, "title": p.title, "target_supplier_id": p.target_supplier_id,
+         "target_reduction_rate": p.target_reduction_rate, "progress": p.progress,
+         "status": p.status, "deadline": p.deadline.isoformat() if p.deadline else None}
+        for p in db.query(ReductionPlan).filter(ReductionPlan.company_id == company_id).all()
+    ]
     return {
         "company_id": company_id,
         "supplier_count": len(nodes) - 1,
         "hot_spots": [n for n in hm["nodes"] if n["risk_level"] in ("red", "yellow")],
         "risk_statistics": stats,
-        "quotas": list_quotas(company_id, db),
-        "reduction_plans": list_reduction_plans(company_id, db),
+        "quotas": quotas,
+        "reduction_plans": plans,
     }
 
 

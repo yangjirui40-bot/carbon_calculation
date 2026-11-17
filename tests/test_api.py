@@ -195,6 +195,8 @@ def run_tests(client):
     body = r.json()
     check("GNN 热力图", r.status_code == 200 and "statistics" in body, r.text)
     check("GNN 识别热点", body.get("statistics", {}).get("red", 0) >= 1 or body.get("statistics", {}).get("yellow", 0) >= 1, str(body.get("statistics")))
+    r = client.get(f"/api/v1/supply-chain/{company1}/report", headers=h)
+    check("供应链聚合报告", r.status_code == 200 and "risk_statistics" in r.json() and "quotas" in r.json(), r.text[:160])
 
     print("=== 绿色金融审计 ===")
     r = client.get("/api/v1/calculations", headers=h, params={"company_id": company1})
