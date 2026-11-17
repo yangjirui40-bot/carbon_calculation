@@ -1,0 +1,40 @@
+{
+  "operation": "enterprise",
+  "payload": {
+    "records": [
+      {
+        "id": "r001",
+        "company_id": "demo-001",
+        "period": "2026-10",
+        "category": "diesel_combustion",
+        "scope": "scope1",
+        "quantity": 40,
+        "unit": "L",
+        "factor_id": "DEMO_DIESEL_01",
+        "review_status": "confirmed"
+      },
+      {
+        "id": "r002",
+        "company_id": "demo-001",
+        "period": "2026-10",
+        "category": "electricity",
+        "scope": "scope2",
+        "quantity": 1200,
+        "unit": "kWh",
+        "factor_id": "DEMO_ELEC_01",
+        "review_status": "confirmed"
+      },
+      {
+        "id": "r003",
+        "company_id": "demo-001",
+        "period": "2026-10",
+        "category": "electronic_components",
+        "scope": "scope3",
+        "amount": 10000,
+        "currency": "CNY",
+        "factor_id": "DEMO_EEIO_01",
+        "review_status": "confirmed"
+      }
+    ]
+  }
+}

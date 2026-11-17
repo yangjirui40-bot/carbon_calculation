@@ -1,0 +1,24 @@
+fastapi==0.163.1
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.8
+psycopg2-binary==2.9.13
+pydantic==2.14.3
+pydantic-settings==2.16.3
+python-multipart==0.0.34
+python-jose[cryptography]==3.5.0
+bcrypt==5.0.0
+numpy>=1.24
+httpx==0.28.1
+# Excel(xlsx) 批量导入
+openpyxl>=3.1
+
+# ---------- 真实 AI 引擎 ----------
+# 真实 OCR（PP-OCRv4，ONNX，CPU 友好）
+rapidocr_onnxruntime>=1.4.1
+# LayoutLMv3 多模态文档理解（真实模型，CPU 可推理）
+torch>=2.0
+transformers>=4.40
+# SBERT 语义对齐（真实中文嵌入模型）
+sentence-transformers>=2.7
+# 可选：S3/OSS 对象存储
+# boto3>=1.34

@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:18
+    container_name: carbonspeed-db
+    environment:
+      POSTGRES_USER: carbonspeed
+      POSTGRES_PASSWORD: carbonspeed_2026_Db_x7KpQ2
+      POSTGRES_DB: carbonspeed
+      TZ: Asia/Shanghai
+    ports:
+      - "5433:5432"
+    volumes:
+      - carbonspeed-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carbonspeed"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: carbonspeed-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: carbonspeed-backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://carbonspeed:carbonspeed_2026_Db_x7KpQ2@db:5432/carbonspeed
+      SECRET_KEY: carbonspeed-prod-secret-please-change
+      DATA_ENC_KEY: carbonspeed-data-enc-key-change-me
+      HF_ENDPOINT: https://hf-mirror.com
+      REDIS_URL: redis://redis:6379/0
+      RATE_LIMIT_BACKEND: redis
+      LLM_API_BASE: ""
+      LLM_API_KEY: ""
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - carbonspeed-models:/app/models_cache
+      - carbonspeed-storage:/app/storage
+    restart: unless-stopped
+
+volumes:
+  carbonspeed-db-data:
+  carbonspeed-models:
+  carbonspeed-storage:

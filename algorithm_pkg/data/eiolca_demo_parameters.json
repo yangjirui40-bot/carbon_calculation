@@ -1,0 +1,42 @@
+{
+  "model": "EIO-LCA demo, 3 sectors",
+  "parameter_status": "synthetic_demo_not_empirical",
+  "matrix_orientation": "A[i,j] is input from sector i required per CNY output of sector j",
+  "sectors": [
+    "electronic_components",
+    "pcb_materials",
+    "packaging_materials"
+  ],
+  "A": [
+    [
+      0.1,
+      0.05,
+      0.02
+    ],
+    [
+      0.08,
+      0.12,
+      0.03
+    ],
+    [
+      0.02,
+      0.04,
+      0.08
+    ]
+  ],
+  "g_kgco2e_per_cny": [
+    0.2,
+    0.3,
+    0.08
+  ],
+  "demo_purchase_vector_cny": [
+    7000,
+    2000,
+    1000
+  ],
+  "notes": [
+    "All A and g parameters are synthetic teaching/demo assumptions.",
+    "They are not taken from an official or measured input-output/emissions database.",
+    "Do not add EIO-LCA results to the existing amount-factor Scope 3 result for the same purchases."
+  ]
+}

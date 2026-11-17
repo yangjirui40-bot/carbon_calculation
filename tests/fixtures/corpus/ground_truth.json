@@ -1,0 +1,156 @@
+{
+  "invoice_clean.png": {
+    "mode": "clean",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 7684.0,
+      "tax_amount": 884.0,
+      "tax_exclusive_amount": 6800.0,
+      "quantity": 800.0,
+      "unit_price": 8.5,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_stamp.png": {
+    "mode": "stamp",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 9040.0,
+      "tax_amount": 1040.0,
+      "tax_exclusive_amount": 8000.0,
+      "quantity": 800.0,
+      "unit_price": 10.0,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_fold.png": {
+    "mode": "fold",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 11300.0,
+      "tax_amount": 1300.0,
+      "tax_exclusive_amount": 10000.0,
+      "quantity": 800.0,
+      "unit_price": 12.5,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_stain.png": {
+    "mode": "stain",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 4802.5,
+      "tax_amount": 552.5,
+      "tax_exclusive_amount": 4250.0,
+      "quantity": 500.0,
+      "unit_price": 8.5,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_rotate.png": {
+    "mode": "rotate",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 11300.0,
+      "tax_amount": 1300.0,
+      "tax_exclusive_amount": 10000.0,
+      "quantity": 1000.0,
+      "unit_price": 10.0,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_faded.png": {
+    "mode": "faded",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 9040.0,
+      "tax_amount": 1040.0,
+      "tax_exclusive_amount": 8000.0,
+      "quantity": 800.0,
+      "unit_price": 10.0,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_noise.png": {
+    "mode": "noise",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 5650.0,
+      "tax_amount": 650.0,
+      "tax_exclusive_amount": 5000.0,
+      "quantity": 500.0,
+      "unit_price": 10.0,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_inconsistent.png": {
+    "mode": "inconsistent",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 4802.5,
+      "tax_amount": 552.5,
+      "tax_exclusive_amount": 4250.0,
+      "quantity": 500.0,
+      "unit_price": 8.5,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": true
+  },
+  "invoice_perspective.png": {
+    "mode": "perspective",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 4802.5,
+      "tax_amount": 552.5,
+      "tax_exclusive_amount": 4250.0,
+      "quantity": 500.0,
+      "unit_price": 8.5,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_stamp_over_amount.png": {
+    "mode": "stamp_over_amount",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 9040.0,
+      "tax_amount": 1040.0,
+      "tax_exclusive_amount": 8000.0,
+      "quantity": 800.0,
+      "unit_price": 10.0,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  },
+  "invoice_faded_fold.png": {
+    "mode": "faded_fold",
+    "doc_type": "invoice",
+    "fields": {
+      "total_amount": 7062.5,
+      "tax_amount": 812.5,
+      "tax_exclusive_amount": 6250.0,
+      "quantity": 500.0,
+      "unit_price": 12.5,
+      "tax_rate": 0.13,
+      "invoice_date": "2026-10-15"
+    },
+    "expect_correction": false
+  }
+}

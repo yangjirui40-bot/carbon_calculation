@@ -1,0 +1,9 @@
+vendor/
+models_cache/
+storage/
+uploads/
+__pycache__/
+*.pyc
+.venv/
+.env
+_piptmp/

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>碳速算 · 企业碳管理平台</title>
+<style>
+:root{--bg:#0d1520;--panel:#16202e;--panel2:#1c2939;--line:#2a3a4e;--text:#dbe7f3;--muted:#8ba1b7;--accent:#2dd4a7;--blue:#4da3ff;--red:#ff5f6d;--yellow:#ffc94d;--green:#2dd4a7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px}
+a{color:var(--blue)}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+header .logo{font-size:18px;font-weight:700;color:var(--accent)}
+header .spacer{flex:1}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#06231c;border:none;font-weight:600}
+button.danger{background:transparent;border-color:var(--red);color:var(--red)}
+select,input[type=text],input[type=password],input[type=number],input[type=file],input[type=range]{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px;width:100%}
+nav{display:flex;gap:4px;padding:10px 20px 0;flex-wrap:wrap}
+nav button{background:transparent;border:none;border-bottom:2px solid transparent;border-radius:0;padding:8px 14px;color:var(--muted)}
+nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:16px 20px;max-width:1400px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h3{font-size:14px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi .v{font-size:24px;font-weight:700}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px}
+.badge.green{background:rgba(45,212,167,.15);color:var(--green)}
+.badge.yellow{background:rgba(255,201,77,.15);color:var(--yellow)}
+.badge.red{background:rgba(255,95,109,.15);color:var(--red)}
+.badge.blue{background:rgba(77,163,255,.15);color:var(--blue)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+pre{background:#0b1118;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;max-height:420px;font-size:12px}
+#login{max-width:380px;margin:12vh auto}
+#login .card{padding:26px}
+#login h2{margin-bottom:18px}
+.msg{margin-top:10px;font-size:13px}
+.ring-wrap{display:flex;gap:20px;align-items:center}
+.legend{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+input[type=range]{padding:0;accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:12px;margin-top:8px}
+.flex{display:flex;gap:12px}
+#toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);border:1px solid var(--accent);padding:10px 16px;border-radius:8px;display:none;z-index:99}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">碳速算</span><span class="muted">财务驱动型碳核算 SaaS 平台</span>
+  <span class="spacer"></span>
+  <span class="small muted" id="whoami"></span>
+  <select id="companySelect" style="width:220px"></select>
+  <button id="btnLogout">退出</button>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div id="toast"></div>
+
+<script>
+const API = "/api/v1";
+let token = localStorage.getItem("cstoken") || "";
+let me = null;
+let companyId = null;
+
+const $ = (s) => document.querySelector(s);
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2600); }
+async function api(path, opts={}){
+  opts.headers = Object.assign({}, opts.headers||{});
+  if(token) opts.headers["Authorization"] = "Bearer "+token;
+  const r = await fetch(API+path, opts);
+  if(r.status===401){ showLogin(); throw new Error("未登录"); }
+  if(r.status===204) return null;
+  const ct = r.headers.get("content-type")||"";
+  const body = ct.includes("json") ? await r.json() : await r.text();
+  if(!r.ok){ throw new Error((body&&body.detail)||body||("HTTP "+r.status)); }
+  return body;
+}
+
+/* ---------------- 登录 ---------------- */
+function showLogin(){
+  $("#main").innerHTML = `
+  <div id="login"><div class="card">
+    <h2>碳速算 · 登录</h2>
+    <div class="flex" style="flex-direction:column;gap:10px">
+      <input id="luser" placeholder="用户名" value="admin">
+      <input id="lpass" type="password" placeholder="密码" value="admin123">
+      <button class="primary" onclick="doLogin()">登录</button>
+    </div>
+    <div class="msg muted" id="lmsg"></div>
+  </div></div>`;
+  $("#whoami").textContent="";
+}
+async function doLogin(){
+  const fd = new FormData();
+  fd.append("username", $("#luser").value); fd.append("password", $("#lpass").value);
+  try{
+    const r = await fetch(API+"/auth/login", {method:"POST", body:fd});
+    const body = await r.json();
+    if(!r.ok) throw new Error(body.detail||"登录失败");
+    token = body.access_token; me = body.user;
+    localStorage.setItem("cstoken", token);
+    await boot();
+  }catch(e){ $("#lmsg").textContent = e.message; }
+}
+
+/* ---------------- 导航 ---------------- */
+const TABS = [
+  ["dashboard","驾驶舱"],["calc","核算"],["pcf","产品碳足迹"],["ocr","票据识别"],
+  ["sim","减排模拟"],["sc","供应链"],["supplier","供应商门户"],["audit","绿色金融审计"],["sys","系统与套餐"],
+];
+function renderNav(){
+  $("#nav").innerHTML = TABS.map(([k,l])=>`<button data-tab="${k}" onclick="switchTab('${k}')">${l}</button>`).join("");
+}
+async function switchTab(k){
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===k));
+  const pages = {dashboard:pageDashboard, calc:pageCalc, pcf:pagePcf, ocr:pageOcr, sim:pageSim, sc:pageSc, supplier:pageSupplier, audit:pageAudit, sys:pageSys};
+  try{ await pages[k](); }catch(e){ toast("加载失败: "+e.message); }
+}
+
+async function boot(){
+  if(!token){ showLogin(); return; }
+  try{
+    me = await api("/auth/me");
+    renderNav();
+    $("#whoami").textContent = me.username+"（"+me.role+"）";
+    const cs = await api("/companies");
+    $("#companySelect").innerHTML = cs.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+    if(cs.length){ companyId = cs[0].id; }
+    $("#companySelect").onchange = ()=> { companyId = +$("#companySelect").value; switchTab("dashboard"); };
+    await switchTab("dashboard");
+  }catch(e){ showLogin(); }
+}
+$("#btnLogout").onclick = ()=>{ localStorage.removeItem("cstoken"); token=""; showLogin(); };
+
+/* ---------------- 驾驶舱 ---------------- */
+async function pageDashboard(){
+  if(!companyId) return;
+  const [sum, ring, sankey, trend] = await Promise.all([
+    api(`/dashboard/company/${companyId}/summary`),
+    api(`/dashboard/company/${companyId}/ring`),
+    api(`/dashboard/company/${companyId}/sankey`),
+    api(`/dashboard/company/${companyId}/trend`),
+  ]);
+  const b = sum.scope_breakdown||{scope1:0,scope2:0,scope3:0};
+  const colors = {scope1:"#ff5f6d", scope2:"#ffc94d", scope3:"#4da3ff"};
+  const names = {scope1:"范围1 直接排放", scope2:"范围2 间接排放(能源)", scope3:"范围3 价值链排放"};
+  let ringSvg = `<svg width="180" height="180" viewBox="0 0 180 180">`;
+  let acc = 0; const total = sum.total_kgco2e||1;
+  const segs = [["scope1",b.scope1],["scope2",b.scope2],["scope3",b.scope3]];
+  for(const [k,v] of segs){
+    const a0 = acc/total*2*Math.PI - Math.PI/2, a1=(acc+v)/total*2*Math.PI - Math.PI/2;
+    const large = (a1-a0)>Math.PI?1:0;
+    const x0=90+75*Math.cos(a0), y0=90+75*Math.sin(a0), x1=90+75*Math.cos(a1), y1=90+75*Math.sin(a1);
+    ringSvg += `<path d="M 90 90 L ${x0} ${y0} A 75 75 0 ${large} 1 ${x1} ${y1} Z" fill="${colors[k]}"/>`;
+    acc += v;
+  }
+  ringSvg += `</svg>`;
+  const legend = segs.map(([k,v])=>`<div><span class="dot" style="background:${colors[k]}"></span>${names[k]}：${v.toFixed(1)} kgCO2e（${(v/total*100).toFixed(1)}%）</div>`).join("");
+
+  const hist = trend.historical.map(h=>`${h.period}: ${h.total.toFixed(0)}`).join("　");
+  const fc = trend.forecast.map(f=>`${f.period}: ${f.total.toFixed(0)}`).join("　");
+  const warn = trend.exceed_warning ? `<span class="badge red">预测突破减排红线</span>` : `<span class="badge green">预测在红线内</span>`;
+
+  $("#main").innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="v" style="color:var(--accent)">${sum.total_kgco2e.toFixed(1)}</div><div class="l">总排放 kgCO2e（${sum.period||"-"}）</div></div>
+    <div class="kpi"><div class="v" style="color:#ff5f6d">${b.scope1.toFixed(1)}</div><div class="l">范围1 直接排放</div></div>
+    <div class="kpi"><div class="v" style="color:#ffc94d">${b.scope2.toFixed(1)}</div><div class="l">范围2 能源间接排放</div></div>
+    <div class="kpi"><div class="v" style="color:#4da3ff">${b.scope3.toFixed(1)}</div><div class="l">范围3 价值链排放</div></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>Scope 1-3 环形分布</h3><div class="ring-wrap">${ringSvg}<div class="legend">${legend}</div></div></div>
+    <div class="card"><h3>子类别明细</h3><table><tr><th>类别</th><th>范围</th><th>排放 kgCO2e</th></tr>
+      ${ring.categories.map(c=>`<tr><td>${c.category}</td><td>${c.scope}</td><td>${c.emissions_kgco2e.toFixed(2)}</td></tr>`).join("")}
+    </table></div>
+    <div class="card"><h3>动态能耗桑基图（能量→环节→碳排放）</h3>
+      <table><tr><th>来源</th><th>流向</th><th>排放 kgCO2e</th></tr>
+      ${sankey.links.map(l=>`<tr><td>${l.source}</td><td>→ ${l.target}</td><td>${l.value.toFixed(2)}</td></tr>`).join("")}
+      </table></div>
+    <div class="card"><h3>时序趋势与减排红线</h3>
+      <div class="small">历史：${hist||"无"}</div>
+      <div class="small muted" style="margin-top:6px">预测：${fc||"无"}　目标红线：${trend.target_total_kgco2e.toFixed(0)} kgCO2e</div>
+      <div class="msg">${warn}</div>
+      <div class="hint">灰色历史曲线 / 蓝色预测曲线 / 红色目标红线（年度减排5%）</div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- 核算 ---------------- */
+async function pageCalc(){
+  const runs = await api(`/calculations?company_id=${companyId}`);
+  $("#main").innerHTML = `
+  <div class="grid">
+    <div class="card"><h3>执行企业核算（Scope 1/2/3）</h3>
+      <div class="flex" style="flex-direction:column;gap:10px">
+        <input id="cPeriod" placeholder="核算期间，如 2026-10" value="2026-10">
+        <button class="primary" onclick="runEnterprise()">一键核算</button>
+      </div>
+      <div class="hint">基于已确认的业务记录（柴油/电力/采购金额）调用 EIO-LCA 引擎与演示因子。</div>
+      <pre id="calcOut" style="display:none"></pre>
+    </div>
+    <div class="card"><h3>核算任务历史</h3>
+      <table><tr><th>类型</th><th>状态</th><th>总量 kgCO2e</th><th>时间</th><th></th></tr>
+      ${runs.map(r=>`<tr><td>${r.operation}</td><td>${r.status}</td><td>${r.total_kgco2e??"-"}</td>
+        <td class="small">${(r.created_at||"").replace("T"," ").slice(0,19)}</td>
+        <td><button onclick="auditRun('${r.run_id}')">审计</button></td></tr>`).join("")}
+      </table>
+    </div>
+  </div>`;
+}
+async function runEnterprise(){
+  const r = await api("/calculations/enterprise",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({company_id:companyId, period:$("#cPeriod").value})});
+  $("#calcOut").style.display="block";
+  $("#calcOut").textContent = JSON.stringify(r,null,2);
+  toast("核算完成：总量 "+r.data.total_kgco2e+" kgCO2e");
+}
+
+/* ---------------- PCF ---------------- */
+async function pagePcf(){
+  const ps = await api(`/products?company_id=${companyId}`);
+  $("#main").innerHTML = `
+  <div class="card"><h3>产品碳足迹（PCF）</h3>
+    <table><tr><th>产品编号</th><th>名称</th><th>产量</th><th>单位</th><th>操作</th></tr>
+    ${ps.map(p=>`<tr><td>${p.product_id}</td><td>${p.product_name}</td><td>${p.output_quantity}</td>
+      <td>${p.product_unit}</td>
+      <td><button onclick="matchPcf('${p.product_id}')">SBERT因子匹配</button>
+          <button class="primary" onclick="calcPcf('${p.product_id}')">核算</button>
+          <button onclick="reportPcf('${p.product_id}')">ISO14067报告</button></td></tr>`).join("")}
+    </table>
+    <pre id="pcfOut" style="display:none;margin-top:10px"></pre>
+  </div>`;
+}
+function showOut(id, data){ const el=$("#"+id); el.style.display="block"; el.textContent=JSON.stringify(data,null,2); }
+async function matchPcf(pid){ const r=await api(`/products/${pid}/match`,{method:"POST"}); showOut("pcfOut",r); toast("SBERT 语义对齐完成"); }
+async function calcPcf(pid){ const r=await api(`/products/${pid}/calculate`,{method:"POST"}); showOut("pcfOut",r); }
+async function reportPcf(pid){ const r=await api(`/products/${pid}/report`); showOut("pcfOut",r); toast("报告生成："+r.report_no); }
+
+/* ---------------- 票据识别 ---------------- */
+async function pageOcr(){
+  const docs = await api(`/documents?company_id=${companyId}`);
+  const ai = await api("/system/ai-status");
+  const engineBadge = ai.layoutlmv3.ready ? `<span class="badge green">LayoutLMv3 已就绪</span>` : `<span class="badge yellow">LayoutLMv3 未加载（回退版面规则）</span>`;
+  $("#main").innerHTML = `
+  <div class="grid">
+    <div class="card"><h3>上传票据（真实 OCR + LayoutLMv3 + POMDP-LLM 纠偏）</h3>
+      <div class="flex" style="flex-direction:column;gap:10px">
+        <select id="dType"><option value="invoice">采购发票</option><option value="electricity_bill">电费单</option></select>
+        <input type="file" id="dFile" accept="image/*,.pdf">
+        <button class="primary" onclick="uploadDoc()">上传并识别</button>
+      </div>
+      <div class="msg">${engineBadge}　OCR：${ai.ocr.model}　SBERT：${ai.sbert.ready?"已就绪":"未加载"}</div>
+      <pre id="ocrOut" style="display:none"></pre>
+    </div>
+    <div class="card"><h3>已上传单据</h3>
+      <table><tr><th>#</th><th>类型</th><th>文件名</th><th>解析状态</th><th>操作</th></tr>
+      ${docs.map(d=>`<tr><td>${d.id}</td><td>${d.doc_type}</td><td>${d.file_name}</td>
+        <td><span class="badge ${d.parse_status==="parsed"?"green":"yellow"}">${d.parse_status}</span></td>
+        <td><button onclick="reparseDoc(${d.id})">识别</button>
+            <button class="primary" onclick="reviewDoc(${d.id})">复核入库</button></td></tr>`).join("")}
+      </table>
+    </div>
+  </div>`;
+}
+async function uploadDoc(){
+  const f = $("#dFile").files[0];
+  if(!f){ toast("请选择图片文件"); return; }
+  const fd = new FormData(); fd.append("file", f);
+  const doc = await api(`/documents/upload?company_id=${companyId}&doc_type=${$("#dType").value}`,{method:"POST",body:fd});
+  toast("已上传 #"+doc.id+"，开始识别…");
+  const r = await api(`/documents/${doc.id}/parse?wait=true`,{method:"POST"});
+  showOut("ocrOut", r);
+  toast(`识别完成：${r.ocr_engine}｜纠偏 ${(r.correction_log||[]).length} 处`);
+  await pageOcr();
+}
+async function reparseDoc(id){
+  const r = await api(`/documents/${id}/parse?wait=true`,{method:"POST"});
+  showOut("ocrOut", r); await pageOcr();
+}
+async function reviewDoc(id){
+  const d = await api(`/documents/${id}`);
+  const f = (d.extracted_fields||{}).fields||{};
+  const hint = (d.extracted_fields||{}).record_hint||{};
+  const r = await api(`/documents/${id}/review`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({review_status:"confirmed"})});
+  showOut("ocrOut", r);
+  toast("已复核入库（类别 "+hint.category+"，因子 "+hint.factor_id+"）");
+}
+
+/* ---------------- 减排模拟 ---------------- */
+async function pageSim(){
+  const scs = await api(`/simulator/company/${companyId}/scenarios`);
+  $("#main").innerHTML = `
+  <div class="grid">
+    <div class="card"><h3>减排路径情景模拟</h3>
+      <div class="flex" style="flex-direction:column;gap:12px">
+        <div><label class="small muted">节电比例（Scope 2）：<b id="eVal">10</b>%</label>
+          <input type="range" id="eRate" min="0" max="100" value="10" oninput="$('#eVal').textContent=this.value"></div>
+        <div><label class="small muted">采购减少比例（Scope 3）：<b id="pVal">5</b>%</label>
+          <input type="range" id="pRate" min="0" max="100" value="5" oninput="$('#pVal').textContent=this.value"></div>
+        <input id="sName" placeholder="情景名称" value="光伏节电+本地化采购">
+        <button class="primary" onclick="runScenario()">运行情景</button>
+      </div>
+      <pre id="simOut" style="display:none"></pre>
+    </div>
+    <div class="card"><h3>历史情景</h3>
+      <table><tr><th>名称</th><th>基准</th><th>情景后</th><th>减排量</th><th>减排率</th></tr>
+      ${scs.map(s=>`<tr><td>${s.scenario_name}</td><td>${s.baseline_total_kgco2e.toFixed(1)}</td>
+        <td>${s.scenario_total_kgco2e.toFixed(1)}</td>
+        <td style="color:var(--green)">${s.reduction_kgco2e.toFixed(1)}</td><td>${(s.reduction_rate*100).toFixed(2)}%</td></tr>`).join("")}
+      </table></div>
+    <div class="card"><h3>ROI 精准测算</h3>
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <input id="roiCapex" type="number" placeholder="初始投资（元）" value="2000000">
+        <input id="roiOpex" type="number" placeholder="年运维（元）" value="100000">
+        <input id="roiSaving" type="number" placeholder="年节约（元）" value="600000">
+        <input id="roiRed" type="number" placeholder="年减排（kgCO2e）" value="500000">
+      </div>
+      <button class="primary" style="margin-top:10px" onclick="calcRoi()">测算</button>
+      <pre id="roiOut" style="display:none"></pre>
+    </div>
+  </div>`;
+}
+async function runScenario(){
+  const r = await api("/simulator/run",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({company_id:companyId, scenario_name:$("#sName").value,
+      electricity_saving_rate:+$("#eRate").value/100, procurement_reduction_rate:+$("#pRate").value/100})});
+  showOut("simOut",r); await pageSim();
+}
+async function calcRoi(){
+  const r = await api("/simulator/roi",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({capex:+$("#roiCapex").value, annual_opex:+$("#roiOpex").value,
+      annual_saving:+$("#roiSaving").value, annual_reduction_kgco2e:+$("#roiRed").value,
+      carbon_price:50, project_life:10, discount_rate:0.08})});
+  showOut("roiOut",r);
+  toast(`ROI=${r.roi}，NPV=${r.npv}元，回收期=${r.payback_period_years}年`);
+}
+
+/* ---------------- 供应链 ---------------- */
+async function pageSc(){
+  const [sup, hm, qs, plans, trades] = await Promise.all([
+    api(`/supply-chain/suppliers?company_id=${companyId}`),
+    api(`/supply-chain/${companyId}/heatmap`),
+    api(`/supply-chain/${companyId}/quotas`),
+    api(`/supply-chain/${companyId}/reduction-plans`),
+    api(`/supply-chain/${companyId}/trades`),
+  ]);
+  const riskColor = {red:"red",yellow:"yellow",green:"green"};
+  $("#main").innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="v">${sup.length}</div><div class="l">供应商总数</div></div>
+    <div class="kpi"><div class="v" style="color:var(--red)">${hm.statistics.red}</div><div class="l">红色高风险节点</div></div>
+    <div class="kpi"><div class="v" style="color:var(--yellow)">${hm.statistics.yellow}</div><div class="l">黄色风险节点</div></div>
+    <div class="kpi"><div class="v" style="color:var(--green)">${hm.statistics.green}</div><div class="l">绿色节点</div></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>供应链碳热力图（GNN 图卷积传播）</h3>
+      <table><tr><th>节点</th><th>层级</th><th>碳强度 kgCO2e/CNY</th><th>是否估算</th><th>风险</th></tr>
+      ${hm.nodes.map(n=>`<tr><td>${n.name}</td><td>${n.tier}</td><td>${n.propagated_intensity?.toFixed(4)??"-"}</td>
+        <td>${n.estimated?'<span class="badge blue">GNN估算</span>':'<span class="badge green">实测</span>'}</td>
+        <td><span class="badge ${riskColor[n.risk_level]}">${n.risk_level}</span></td></tr>`).join("")}
+      </table>
+      <div class="hint">二/三级供应商缺失数据由 GNN 邻居聚合估算（H' = σ(D̂⁻¹ᐟ²(A+I)D̂⁻¹ᐟ²HW)）</div>
+    </div>
+    <div class="card"><h3>碳配额</h3>
+      <table><tr><th>供应商</th><th>年度</th><th>配额</th><th>已用</th><th>剩余</th></tr>
+      ${qs.map(q=>`<tr><td>${q.supplier_id}</td><td>${q.year}</td><td>${q.allocated_quota}</td><td>${q.used_quota}</td>
+        <td style="color:${q.remaining<0?"var(--red)":"var(--green)"}">${q.remaining}</td></tr>`).join("")}
+      </table></div>
+    <div class="card"><h3>协同减排计划</h3>
+      <table><tr><th>计划</th><th>目标供应商</th><th>目标减排</th><th>进度</th><th>状态</th></tr>
+      ${plans.map(p=>`<tr><td>${p.title}</td><td>${p.target_supplier_id||"-"}</td><td>${(p.target_reduction_rate*100).toFixed(0)}%</td>
+        <td>${(p.progress*100).toFixed(0)}%</td><td>${p.status}</td></tr>`).join("")}
+      </table></div>
+    <div class="card"><h3>碳配额交易</h3>
+      <div class="flex" style="flex-direction:column;gap:8px">
+        <input id="trBuyer" type="number" placeholder="买方企业ID">
+        <input id="trAmount" type="number" placeholder="配额数量 kgCO2e">
+        <input id="trPrice" type="number" placeholder="单价 元/kgCO2e" value="0.05">
+        <button class="primary" onclick="proposeTrade()">发起交易</button>
+        <button onclick="tradeReport()">对账报表</button>
+      </div>
+      <table style="margin-top:10px"><tr><th>交易号</th><th>买卖方</th><th>数量</th><th>状态</th><th></th></tr>
+      ${trades.map(t=>`<tr><td class="small">${t.trade_id.slice(-8)}</td><td>${t.seller_company_id}→${t.buyer_company_id}</td>
+        <td>${t.amount}</td><td><span class="badge ${t.status==="accepted"?"green":(t.status==="declined"?"red":"yellow")}">${t.status}</span></td>
+        <td>${t.status==="pending"&&t.buyer_company_id===companyId?`<button onclick="acceptTrade('${t.trade_id}')">接受</button>`:""}</td></tr>`).join("")}
+      </table>
+      <pre id="tradeOut" style="display:none"></pre>
+    </div>
+  </div>`;
+}
+async function proposeTrade(){
+  const r = await api("/supply-chain/trades",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({seller_company_id:companyId, buyer_company_id:+$("#trBuyer").value,
+      amount:+$("#trAmount").value, price:+$("#trPrice").value})});
+  showOut("tradeOut",r); toast("交易已发起："+r.trade_id); await pageSc();
+}
+async function acceptTrade(tid){
+  const r = await api(`/supply-chain/trades/${tid}/accept`,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+  showOut("tradeOut",r); toast("交易已接受，配额已划转"); await pageSc();
+}
+async function tradeReport(){
+  const r = await api(`/supply-chain/${companyId}/trades/report`);
+  showOut("tradeOut",r);
+}
+
+/* ---------------- 供应商门户 ---------------- */
+async function pageSupplier(){
+  const m = await api("/supplier-portal/me");
+  const subs = await api("/supplier-portal/submissions");
+  $("#main").innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="v">${m.name}</div><div class="l">供应商（Tier ${m.tier}）</div></div>
+    <div class="kpi"><div class="v">${m.carbon_intensity??"-"}</div><div class="l">碳强度 kgCO2e/CNY</div></div>
+    <div class="kpi"><div class="v">${(m.annual_emissions??0).toFixed(0)}</div><div class="l">年度排放 kgCO2e</div></div>
+    <div class="kpi"><div class="v"><span class="badge ${m.risk_level==="red"?"red":(m.risk_level==="yellow"?"yellow":"green")}">${m.risk_level}</span></div><div class="l">风险等级</div></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>填报本期碳数据</h3>
+      <div class="flex" style="flex-direction:column;gap:10px">
+        <input id="spPeriod" placeholder="期间，如 2026-10" value="2026-10">
+        <input id="spEmissions" type="number" placeholder="本期排放 kgCO2e">
+        <input id="spIntensity" type="number" placeholder="碳强度 kgCO2e/CNY（可选）">
+        <button class="primary" onclick="submitSupplier()">提交上报</button>
+      </div>
+      <div class="hint">提交后自动更新档案并扣减当年碳配额用量；链主企业可实时查看。</div>
+      <pre id="spOut" style="display:none"></pre>
+    </div>
+    <div class="card"><h3>我的配额与减排计划</h3>
+      <table><tr><th>年度</th><th>配额</th><th>已用</th><th>剩余</th></tr>
+      ${m.quotas.map(q=>`<tr><td>${q.year}</td><td>${q.allocated}</td><td>${q.used}</td>
+        <td style="color:${q.remaining<0?"var(--red)":"var(--green)"}">${q.remaining}</td></tr>`).join("")}
+      </table>
+      <div class="hint" style="margin-top:8px">减排计划：${m.reduction_plans.map(p=>`${p.title}（目标${(p.target_rate*100).toFixed(0)}%，进度${(p.progress*100).toFixed(0)}%）`).join("；")||"无"}</div>
+    </div>
+    <div class="card"><h3>上报历史</h3>
+      <table><tr><th>期间</th><th>排放</th><th>强度</th><th>时间</th></tr>
+      ${subs.map(s=>`<tr><td>${s.period}</td><td>${s.reported_emissions}</td><td>${s.reported_intensity??"-"}</td>
+        <td class="small">${(s.created_at||"").replace("T"," ").slice(0,19)}</td></tr>`).join("")}
+      </table></div>
+  </div>`;
+}
+async function submitSupplier(){
+  const r = await api("/supplier-portal/report",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({period:$("#spPeriod").value, reported_emissions:+$("#spEmissions").value,
+      reported_intensity:$("#spIntensity").value?+$("#spIntensity").value:null})});
+  showOut("spOut",r); toast(`上报成功，剩余配额：${r.quota_remaining??"-"}`); await pageSupplier();
+}
+
+/* ---------------- 绿色金融审计 ---------------- */
+async function pageAudit(){
+  const runs = await api(`/calculations?company_id=${companyId}&operation=enterprise`);
+  $("#main").innerHTML = `
+  <div class="card"><h3>绿色金融审计 · 一键穿透核查 + 区块链哈希存证</h3>
+    <table><tr><th>核算任务</th><th>总量</th><th>操作</th></tr>
+    ${runs.map(r=>`<tr><td>${r.run_id}</td><td>${r.total_kgco2e??"-"}</td>
+      <td><button onclick="traceRun('${r.run_id}')">穿透核查</button>
+          <button class="primary" onclick="attestRun('${r.run_id}')">区块链存证</button></td></tr>`).join("")}
+    </table>
+    <pre id="auditOut" style="display:none;margin-top:10px"></pre>
+  </div>`;
+}
+async function traceRun(runId){ const r=await api(`/audit/run/${runId}/trace`); showOut("auditOut",r); }
+async function attestRun(runId){ const r=await api(`/audit/run/${runId}/attest`,{method:"POST"});
+  showOut("auditOut",r); toast(`已上链存证：${r.attestation_hash.slice(0,16)}…（区块 ${r.block_height}）`); }
+async function auditRun(runId){ await switchTab("audit"); traceRun(runId); }
+
+/* ---------------- 系统 ---------------- */
+async function pageSys(){
+  const [ai, plans, sub] = await Promise.all([
+    api("/system/ai-status"), api("/billing/plans"),
+    api(`/billing/company/${companyId}/subscription`),
+  ]);
+  const ok = (b)=>b?`<span class="badge green">就绪</span>`:`<span class="badge yellow">未加载</span>`;
+  $("#main").innerHTML = `
+  <div class="grid">
+    <div class="card"><h3>AI 引擎状态</h3>
+      <table>
+        <tr><td>OCR（${ai.ocr.model}）</td><td>${ok(true)}</td></tr>
+        <tr><td>LayoutLMv3（${ai.layoutlmv3.model}）</td><td>${ok(ai.layoutlmv3.ready)}</td></tr>
+        <tr><td>SBERT（${ai.sbert.model}）</td><td>${ok(ai.sbert.ready)}</td></tr>
+        <tr><td>POMDP-LLM 大模型推理机</td><td>${ai.llm.enabled?`<span class="badge green">已接入 ${ai.llm.model}</span>`:`<span class="badge blue">内置勾稽规则（可配 LLM_API_KEY 启用）</span>`}</td></tr>
+      </table>
+      <div class="hint">模型文件可通过 python -m app.services.ai.provision 预下载。</div>
+    </div>
+    <div class="card"><h3>套餐与用量</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="v">${sub.plan_code}</div><div class="l">当前套餐（${sub.status}）</div></div>
+        <div class="kpi"><div class="v">${sub.usage_calculations}/${sub.quota_calculations??"-"}</div><div class="l">核算用量</div></div>
+        <div class="kpi"><div class="v">${sub.usage_documents}/${sub.quota_documents??"-"}</div><div class="l">单据用量</div></div>
+      </div>
+      <table><tr><th>套餐</th><th>年费</th><th>核算配额</th><th>单据配额</th></tr>
+      ${plans.map(p=>`<tr><td>${p.name}</td><td>${p.price_yearly?p.price_yearly+"元":"按融资金额分成"}</td>
+        <td>${p.quota_calculations}</td><td>${p.quota_documents}</td></tr>`).join("")}
+      </table>
+    </div>
+  </div>`;
+}
+
+boot();
+</script>
+</body>
+</html>

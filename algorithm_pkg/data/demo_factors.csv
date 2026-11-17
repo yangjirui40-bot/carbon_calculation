@@ -1,0 +1,6 @@
+factor_id,category,value,unit,price_basis,version,origin,is_demo
+DEMO_DIESEL_01,diesel_combustion,2.68,kgCO2e/L,,demo-v1,项目演示设定,true
+DEMO_ELEC_01,electricity,0.58,kgCO2e/kWh,,demo-v1,项目演示设定,true
+DEMO_EEIO_01,electronic_components,0.35,kgCO2e/CNY,人民币未税,demo-v1,项目演示设定,true
+DEMO_EEIO_02,pcb_materials,0.45,kgCO2e/CNY,人民币未税,demo-v1,项目演示设定,true
+DEMO_EEIO_03,packaging_materials,0.12,kgCO2e/CNY,人民币未税,demo-v1,项目演示设定,true

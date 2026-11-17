@@ -1,0 +1,10 @@
+{
+  "operation": "eiolca",
+  "payload": {
+    "purchase_vector_cny": [
+      7000,
+      2000,
+      1000
+    ]
+  }
+}

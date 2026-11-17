@@ -1,0 +1,34 @@
+{
+  "operation": "product",
+  "payload": {
+    "product": {
+      "product_id": "p001",
+      "product_name": "控制板模块",
+      "output_quantity": 1000,
+      "product_unit": "件"
+    },
+    "bom_items": [
+      {
+        "bom_item_id": "b001",
+        "material_name": "电子元器件",
+        "material_amount": 7000,
+        "matched_category": "electronic_components",
+        "matched_factor_id": "DEMO_EEIO_01"
+      },
+      {
+        "bom_item_id": "b002",
+        "material_name": "PCB基板",
+        "material_amount": 2000,
+        "matched_category": "pcb_materials",
+        "matched_factor_id": "DEMO_EEIO_02"
+      },
+      {
+        "bom_item_id": "b003",
+        "material_name": "包装纸盒",
+        "material_amount": 1000,
+        "matched_category": "packaging_materials",
+        "matched_factor_id": "DEMO_EEIO_03"
+      }
+    ]
+  }
+}
