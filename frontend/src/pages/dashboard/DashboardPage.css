@@ -1,0 +1,282 @@
+/* 碳排全景驾驶舱 · 仅本页布局；色值与字体全部来自 swiss-tokens.css */
+
+.dash-page {
+  min-width: 0;
+  padding-bottom: 40px;
+}
+
+/* ---------- KPI ---------- */
+
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-width: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.dash-kpi {
+  min-width: 0;
+  padding: 18px 22px 20px 0;
+  border-right: 1px solid var(--rule);
+}
+
+.dash-kpi + .dash-kpi {
+  padding-left: 22px;
+}
+
+.dash-kpi:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.dash-kpi .swiss-stat__number {
+  font-size: 28px;
+}
+
+/* ---------- 通用图表卡片 ---------- */
+
+.dash-duo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+  min-width: 0;
+}
+
+.dash-card {
+  min-width: 0;
+}
+
+.dash-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.dash-card__head h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dash-card__head span {
+  color: var(--muted);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.dash-card__note {
+  margin: 10px 0 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.dash-table-block {
+  margin-top: 18px;
+}
+
+.dash-table-caption {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------- 图表旁的数据表 ---------- */
+
+.dash-mini {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 11.5px;
+}
+
+.dash-mini th {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dash-mini td {
+  padding: 8px;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+
+.dash-mini th:first-child,
+.dash-mini td:first-child {
+  padding-left: 0;
+}
+
+.dash-mini th:last-child,
+.dash-mini td:last-child {
+  padding-right: 0;
+}
+
+.dash-mini .is-right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-mini .num {
+  font-family: var(--font-family-number);
+}
+
+/* ---------- 趋势提示 ---------- */
+
+.dash-warning {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-left: 2px solid var(--rule);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.dash-warning strong {
+  margin-right: 8px;
+  font-weight: 700;
+}
+
+.dash-warning.is-fail {
+  border-left-color: var(--fail);
+}
+
+.dash-warning.is-fail strong {
+  color: var(--fail);
+}
+
+.dash-warning.is-ok {
+  border-left-color: var(--accent);
+}
+
+.dash-warning.is-ok strong {
+  color: var(--accent);
+}
+
+.dash-warning.is-muted {
+  color: var(--muted);
+}
+
+.dash-drilldown__summary {
+  margin-top: 14px;
+}
+
+/* ---------- 加载骨架 ---------- */
+
+.dash-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 22px;
+}
+
+.dash-skeleton__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dash-skeleton__duo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
+
+.dash-skeleton i {
+  display: block;
+  background: var(--rule-soft);
+  animation: dash-pulse 1.5s ease-in-out infinite;
+}
+
+.dash-skeleton__kpis i {
+  height: 74px;
+}
+
+.dash-skeleton__duo i {
+  height: 380px;
+}
+
+.dash-skeleton__wide {
+  height: 360px;
+}
+
+@keyframes dash-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- 响应式 ---------- */
+
+@media (max-width: 1100px) {
+  .dash-kpis,
+  .dash-skeleton__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-duo,
+  .dash-skeleton__duo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-kpi {
+    padding-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .dash-kpi + .dash-kpi {
+    padding-left: 18px;
+  }
+
+  .dash-kpi:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .dash-kpi:nth-child(2n + 1) {
+    padding-left: 0;
+  }
+
+  .dash-kpi:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-kpis,
+  .dash-skeleton__kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-kpi,
+  .dash-kpi + .dash-kpi {
+    padding-left: 0;
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .dash-kpi:last-child {
+    border-bottom: 0;
+  }
+}

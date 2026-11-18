@@ -1,0 +1,60 @@
+/* 细线数据表 · 表头小号大写，行底 rule-soft，hover paper-raised */
+
+.swiss-data-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.swiss-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.swiss-data-table th {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  /* 浏览器对 th 默认居中；显式左对齐，只有 column.align 才右/中 */
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.swiss-data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.swiss-data-table th:first-child,
+.swiss-data-table td:first-child {
+  padding-left: 0;
+}
+
+.swiss-data-table th:last-child,
+.swiss-data-table td:last-child {
+  padding-right: 0;
+}
+
+.swiss-data-table tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.swiss-data-table tbody tr:hover {
+  background: var(--paper-raised);
+}
+
+.swiss-data-table__empty {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}

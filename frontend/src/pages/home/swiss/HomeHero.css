@@ -1,0 +1,239 @@
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 520px;
+  gap: 56px;
+  align-items: center;
+  padding: 48px 0 42px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.home-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-kicker::before {
+  content: "";
+  width: 26px;
+  height: 1px;
+  background: currentColor;
+}
+
+.home-hero h1 {
+  margin: 14px 0 0;
+  font-size: 60px;
+  line-height: 1.04;
+  letter-spacing: -0.05em;
+  font-weight: 700;
+}
+
+.home-hero h1 em {
+  font-style: normal;
+  border-bottom: 8px solid var(--lime);
+}
+
+.home-lead {
+  max-width: 660px;
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.9;
+}
+
+.home-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 26px;
+}
+
+.home-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  min-width: 176px;
+  padding: 14px 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-btn-primary:hover {
+  background: var(--ink);
+}
+
+.home-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 140ms ease;
+}
+
+.home-btn-ghost:hover {
+  border-color: var(--ink);
+}
+
+/* ---------- 流程图 ---------- */
+.home-diagram {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--rule);
+}
+
+.home-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 286px;
+  padding: 18px 16px;
+  border-right: 1px solid var(--rule);
+}
+
+.home-panel:last-child {
+  border-right: 0;
+}
+
+.home-panel-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.home-panel h2 {
+  margin: 18px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-doc-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.home-doc-lines i {
+  display: block;
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.5;
+}
+
+.home-doc-lines i:nth-child(1) {
+  width: 64%;
+}
+
+.home-doc-lines i:nth-child(2) {
+  width: 88%;
+}
+
+.home-doc-lines i:nth-child(3) {
+  width: 74%;
+}
+
+.home-doc-box {
+  height: 92px;
+  margin-top: 26px;
+  border: 1px solid var(--ink);
+  opacity: 0.35;
+}
+
+.home-field-rows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+
+.home-field-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
+.home-field-row b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.home-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 122px;
+  margin-top: 22px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.home-bars i {
+  flex: 1;
+  background: var(--accent);
+  opacity: 0.9;
+}
+
+.home-bars i:nth-child(2) {
+  background: var(--lime);
+}
+
+.home-bars i:nth-child(3) {
+  opacity: 0.55;
+}
+
+.home-panel-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1200px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero h1 {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-hero h1 {
+    font-size: 38px;
+  }
+
+  .home-diagram {
+    grid-template-columns: 1fr;
+  }
+
+  .home-panel {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .home-panel:last-child {
+    border-bottom: 0;
+  }
+}

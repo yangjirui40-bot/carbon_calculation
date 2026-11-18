@@ -78,6 +78,27 @@ def _seed_users(db) -> None:
     db.commit()
 
 
+def _seed_demo_users(db, company: Company) -> None:
+    """与前端交付约定一致的演示账号（企业/审计员/供应商门户）。"""
+    demo_users = [
+        dict(username="enterprise", email="enterprise@carbonspeed.local", password="enterprise123",
+             role="enterprise", company_id=company.id, supplier_id=None),
+        dict(username="auditor", email="auditor@carbonspeed.local", password="auditor123",
+             role="auditor", company_id=None, supplier_id=None),
+        dict(username="supplier", email="supplier@carbonspeed.local", password="supplier123",
+             role="supplier", company_id=None, supplier_id="sup-t1-a"),
+    ]
+    for u in demo_users:
+        if db.query(User).filter(User.username == u["username"]).first():
+            continue
+        db.add(User(
+            username=u["username"], email=u["email"],
+            hashed_password=hash_password(u["password"]),
+            role=u["role"], company_id=u["company_id"], supplier_id=u["supplier_id"],
+        ))
+    db.commit()
+
+
 def _seed_company(db) -> Company:
     c = db.query(Company).filter(Company.code == "demo-001").first()
     if not c:
@@ -204,6 +225,7 @@ def seed() -> None:
         _seed_factors(db)
         _seed_users(db)
         company = _seed_company(db)
+        _seed_demo_users(db, company)
         subscribe(db, company.id, "pro")
         _seed_records(db, company)
         product = _seed_product(db, company)
@@ -212,7 +234,7 @@ def seed() -> None:
         # 构建 OLAP 星型模型（维度 + 事实表）
         from .services.olap import refresh_olap
         refresh_olap(db)
-        print("种子数据完成。默认管理员：admin / admin123（演示企业已订阅：专业成长版；OLAP 星型模型已构建）")
+        print("种子数据完成。管理员 admin/admin123；演示账号 enterprise/enterprise123、auditor/auditor123、supplier/supplier123（sup-t1-a 门户）；OLAP 星型模型已构建")
     finally:
         db.close()
 

@@ -1,0 +1,56 @@
+/* 报告页浏览器打印：A4、隐藏导航与操作按钮 */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    background: var(--color-bg-container);
+  }
+
+  .app-sider,
+  .app-header,
+  .app-footer,
+  .report-actions {
+    display: none !important;
+  }
+
+  .app-layout__content {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .report {
+    gap: 0;
+  }
+
+  /* 每个 sheet 正好一页 */
+  .report-sheet {
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .report-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .report__table thead {
+    display: table-header-group;
+  }
+
+  .report__table tr {
+    break-inside: avoid;
+  }
+
+  .report__section {
+    break-inside: avoid;
+  }
+}

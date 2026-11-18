@@ -1,0 +1,42 @@
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  line-height: var(--font-caption-line);
+  white-space: nowrap;
+}
+
+.status-tag__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-tag--pending {
+  color: var(--status-pending);
+  background: var(--status-pending-bg);
+}
+
+.status-tag--info {
+  color: var(--status-info);
+  background: var(--status-info-bg);
+}
+
+.status-tag--review {
+  color: var(--status-review);
+  background: var(--status-review-bg);
+}
+
+.status-tag--done {
+  color: var(--status-done);
+  background: var(--status-done-bg);
+}
+
+.status-tag--failed {
+  color: var(--status-failed);
+  background: var(--status-failed-bg);
+}

@@ -1,0 +1,9 @@
+/* 上报表 · 备注列限宽换行 */
+
+.submission-note {
+  display: inline-block;
+  max-width: 240px;
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

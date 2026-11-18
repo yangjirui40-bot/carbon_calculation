@@ -1,0 +1,58 @@
+.bom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bom-form__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.bom-form__error {
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--fail);
+  color: var(--fail);
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bom-form__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bom-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 0.7fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.bom-form__remove {
+  padding-top: 20px;
+}
+
+.bom-form__remove .swiss-button {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .bom-form__row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .bom-form__remove {
+    padding-top: 0;
+    align-self: end;
+  }
+}

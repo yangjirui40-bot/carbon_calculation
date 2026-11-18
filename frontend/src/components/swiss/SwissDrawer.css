@@ -1,0 +1,105 @@
+/* 右侧详情抽屉 */
+
+.swiss-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  display: flex;
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  animation: swiss-drawer-fade 160ms ease-out;
+}
+
+.swiss-drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 100vw;
+  border-left: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  animation: swiss-drawer-in 200ms ease-out;
+}
+
+.swiss-drawer:focus {
+  outline: none;
+}
+
+.swiss-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.swiss-drawer__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.swiss-drawer__close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 140ms ease;
+}
+
+.swiss-drawer__close:hover {
+  color: var(--accent);
+}
+
+.swiss-drawer__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.swiss-drawer__body {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 22px 24px;
+  overflow-y: auto;
+}
+
+.swiss-drawer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--rule);
+}
+
+@keyframes swiss-drawer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes swiss-drawer-in {
+  from {
+    transform: translateX(24px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

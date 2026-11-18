@@ -1,0 +1,22 @@
+/* 上报历史 */
+
+.supplier-submissions-page {
+  min-width: 0;
+}
+
+.submissions-inline-link {
+  margin: 0 3px;
+  padding-bottom: 1px;
+  border-bottom: 1px solid currentColor;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.submissions-inline-link:hover {
+  color: var(--ink);
+}
+
+.submissions-inline-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

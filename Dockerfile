@@ -1,4 +1,18 @@
-# 碳速算后端镜像
+# ============================================================
+# 碳速算平台镜像（构建上下文 = 本目录，即仓库根 backend/）
+# 阶段 1：前端构建（React + Vite + TS7 原生编译器）
+# 阶段 2：后端运行时（Python + 真实 AI 引擎 + 前端静态托管）
+# ============================================================
+
+# ---------- 阶段 1：前端构建 ----------
+FROM node:24-slim AS frontend-build
+WORKDIR /fe
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
+# ---------- 阶段 2：后端运行时 ----------
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -21,8 +35,12 @@ RUN pip install --default-timeout=300 --retries 10 -r requirements.txt
 
 COPY algorithm_pkg ./algorithm_pkg
 COPY app ./app
+COPY data ./data
 COPY run.py .
 COPY .env.example ./.env.example
+
+# 前端构建产物：后端 / 根路径直接托管（SPA 回退内置于 app/main.py）
+COPY --from=frontend-build /fe/dist ./frontend/dist
 
 RUN mkdir -p /app/storage /app/models_cache
 

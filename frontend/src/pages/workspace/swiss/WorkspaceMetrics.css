@@ -1,0 +1,61 @@
+/* 工作台指标行 */
+
+.ws-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 18px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.ws-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 0;
+  border-right: 1px solid var(--rule);
+}
+
+.ws-metric:last-child {
+  border-right: 0;
+}
+
+.ws-metric + .ws-metric {
+  padding-left: 22px;
+}
+
+.ws-metric strong {
+  font-family: var(--font-family-number);
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.ws-metric span {
+  color: var(--muted);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .ws-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ws-metric {
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .ws-metric + .ws-metric {
+    padding-left: 0;
+  }
+
+  .ws-metric:last-child {
+    border-bottom: 0;
+  }
+}

@@ -1,0 +1,45 @@
+/* 表单字段 · 小号大写标签 + 错误/提示文案 */
+
+.swiss-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.swiss-field__label {
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.swiss-field__required {
+  margin-left: 3px;
+  color: var(--accent);
+}
+
+.swiss-field__control {
+  min-width: 0;
+}
+
+.swiss-field__error {
+  color: var(--fail);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.swiss-field__hint {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+/* 错误态由父级字段控制下划线颜色；更高优先级避免与输入框 focus 规则互相覆盖 */
+.swiss-field.swiss-field--error .swiss-input,
+.swiss-field.swiss-field--error .swiss-select,
+.swiss-field.swiss-field--error .swiss-textarea {
+  border-bottom-color: var(--fail);
+}

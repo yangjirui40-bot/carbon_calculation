@@ -1,0 +1,27 @@
+.bom-table__empty {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.bom-code {
+  color: var(--ink);
+  font-family: var(--font-family-number);
+  font-size: 11px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.bom-num {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bom-unmatched {
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 700;
+}

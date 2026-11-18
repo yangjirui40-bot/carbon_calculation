@@ -1,0 +1,51 @@
+/* 企业选择闸门 · 账号未绑定企业时出现 */
+
+.ws-gate {
+  max-width: 560px;
+  padding: 46px 0 60px;
+}
+
+.ws-gate__kicker {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ws-gate__title {
+  margin: 12px 0 0;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.ws-gate__desc {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+
+.ws-gate__hint {
+  margin: 24px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ws-gate__field {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.ws-gate__label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

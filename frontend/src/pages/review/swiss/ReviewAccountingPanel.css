@@ -1,0 +1,42 @@
+.review-accounting {
+  margin-top: 34px;
+}
+
+.review-accounting-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 22px;
+  padding-top: 16px;
+}
+
+.review-accounting-error {
+  margin: 16px 0 0;
+  color: var(--fail);
+  font-size: 10.5px;
+}
+
+.review-accounting-retry {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--fail);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.review-accounting-note {
+  margin: 18px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1200px) {
+  .review-accounting-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

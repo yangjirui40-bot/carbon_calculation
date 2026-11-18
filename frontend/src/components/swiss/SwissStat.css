@@ -1,0 +1,58 @@
+/* 指标块 · 小号大写标签 + 等宽大号数字 */
+
+.swiss-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.swiss-stat__label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.swiss-stat__value {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.swiss-stat__number {
+  color: var(--ink);
+  font-family: var(--font-family-number);
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.swiss-stat__unit {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.swiss-stat__hint {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.swiss-stat--accent .swiss-stat__number {
+  color: var(--accent);
+}
+
+.swiss-stat--warn .swiss-stat__number {
+  color: var(--warn);
+}
+
+.swiss-stat--fail .swiss-stat__number {
+  color: var(--fail);
+}

@@ -1,0 +1,167 @@
+.doc-upload-panel {
+  min-width: 0;
+}
+
+.doc-upload-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 300px;
+  padding: 24px;
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.35);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.doc-upload-box.is-dragging {
+  border-color: var(--accent);
+  background: rgba(201, 244, 91, 0.12);
+}
+
+.doc-file-input {
+  display: none;
+}
+
+.doc-type-row {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.doc-type-chip {
+  padding: 7px 12px 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.doc-type-chip.is-active {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+}
+
+.doc-type-chip:disabled {
+  opacity: 0.5;
+}
+
+.doc-upload-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--rule);
+  color: var(--accent);
+}
+
+.doc-upload-box h2 {
+  margin: 26px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.doc-upload-box p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.8;
+}
+
+.doc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 15px;
+  border: 0;
+  background: var(--accent);
+  color: #e8ffd0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.doc-btn-primary:disabled {
+  background: var(--rule);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.doc-upload-note {
+  margin-top: 10px;
+  color: var(--muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+}
+
+.doc-upload-result {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--lime);
+  background: rgba(201, 244, 91, 0.12);
+}
+
+.doc-upload-result b {
+  font-size: 11.5px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.doc-upload-result span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.doc-upload-result .doc-upload-result-hint {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.doc-upload-result .doc-upload-result-warn {
+  color: var(--warn);
+}
+
+.doc-upload-error {
+  margin-top: 12px;
+  padding: 10px 0 10px 12px;
+  border-left: 3px solid var(--fail);
+  color: var(--fail);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.doc-manual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  text-align: left;
+}
+
+.doc-manual-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+}
+
+.doc-manual small {
+  color: var(--muted);
+  font-size: 10px;
+}

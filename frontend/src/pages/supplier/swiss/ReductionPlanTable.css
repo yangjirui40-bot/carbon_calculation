@@ -1,0 +1,59 @@
+/* 减排计划 · 细线进度与状态色点 */
+
+.plan-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 110px;
+}
+
+.plan-progress__value {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.plan-progress__track {
+  display: block;
+  height: 2px;
+  background: var(--rule);
+}
+
+.plan-progress__fill {
+  display: block;
+  height: 2px;
+  background: var(--accent);
+}
+
+.plan-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.plan-status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
+
+.plan-status--ongoing {
+  color: var(--accent);
+}
+
+.plan-status--completed {
+  color: var(--s2);
+}
+
+.plan-status--overdue {
+  color: var(--fail);
+}
+
+.plan-status--default {
+  color: var(--muted);
+}

@@ -1,0 +1,97 @@
+/* 账号开通 · 瑞士风格 · 零圆角、纸色底、细线分隔 */
+
+.users-page {
+  min-width: 0;
+  padding-bottom: 36px;
+}
+
+.users-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+  max-width: 760px;
+  min-width: 0;
+}
+
+.users-form__error {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-left: 2px solid var(--fail);
+  background: var(--paper-raised);
+  color: var(--fail);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.users-form__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+/* ---------- 开通结果 ---------- */
+
+.account-result {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  max-width: 760px;
+  margin: 0;
+}
+
+.account-result__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.account-result__row dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.account-result__row dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-family-number);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.account-result__row dd.account-result__active {
+  color: var(--accent);
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.account-result__note {
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.users-reset-btn.swiss-button {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+}
+
+@media (max-width: 620px) {
+  .users-form,
+  .account-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

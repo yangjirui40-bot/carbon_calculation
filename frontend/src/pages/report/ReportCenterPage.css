@@ -1,0 +1,144 @@
+/* 报告中心 */
+
+.report-center {
+  min-width: 0;
+}
+
+.report-center__filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 18px;
+  max-width: 420px;
+  margin-bottom: 6px;
+}
+
+.report-center__filters .swiss-field {
+  flex: 1;
+  min-width: 240px;
+}
+
+.report-center__filter-note {
+  padding-bottom: 10px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.report-center__filter-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  color: var(--fail);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.report-center__no {
+  color: var(--ink);
+  font-family: var(--font-family-number);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.report-center__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.report-center__status-dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+}
+
+.report-center__status--done {
+  color: var(--accent);
+}
+
+.report-center__status--muted {
+  color: var(--muted);
+}
+
+.report-center__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 12px;
+}
+
+.report-center__action {
+  padding: 0 0 1px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.report-center__action:hover:not(:disabled) {
+  border-bottom-color: currentColor;
+}
+
+.report-center__action:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.report-center__action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.report-center__action-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--fail);
+  background: var(--paper-raised);
+  color: var(--fail);
+  font-size: 11.5px;
+  line-height: 1.65;
+  word-break: break-word;
+}
+
+.report-center__empty-link {
+  display: inline-block;
+  padding-bottom: 2px;
+  border-bottom: 1px solid currentColor;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.report-center__empty-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .report-center__filters {
+    max-width: none;
+  }
+
+  .report-center__actions {
+    justify-content: flex-start;
+  }
+}

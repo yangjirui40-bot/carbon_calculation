@@ -1,0 +1,37 @@
+/* 首页 · 瑞士风格（与工作台同一套配色与排版语言） */
+
+@import '../../styles/swiss-tokens.css';
+
+.home-swiss {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.home-wrap {
+  max-width: none;
+  margin: 0;
+  padding: 0 44px;
+  min-height: 100vh;
+}
+
+.home-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 46px;
+  padding: 16px 0 22px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 760px) {
+  .home-wrap {
+    padding: 0 24px;
+  }
+}

@@ -1,0 +1,61 @@
+/* 数据核对 · 瑞士风格方案 3 · 校对工作台 */
+
+.review-swiss {
+  --paper: #f1eee5;
+  --ink: #14211c;
+  --muted: #6d726a;
+  --rule: #d3ccbd;
+  --rule-soft: #e2dccf;
+  --accent: #0e3b2e;
+  --lime: #c9f45b;
+  --warn: #9a5b13;
+  --fail: #a33a2a;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 全局 SwissAppShell 已提供左右 44px 内边距 */
+.review-wrap {
+  max-width: none;
+  margin: 0;
+}
+
+.review-missing {
+  padding: 80px 0;
+  max-width: 560px;
+}
+
+.review-missing-kicker {
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.review-missing h1 {
+  margin: 12px 0 0;
+  font-size: 32px;
+  letter-spacing: -0.04em;
+}
+
+.review-missing p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.review-missing-link {
+  display: inline-block;
+  margin-top: 24px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid currentColor;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+

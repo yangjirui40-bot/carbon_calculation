@@ -1,0 +1,184 @@
+/* 业务记录页 · 仅引用 swiss-tokens 变量，零圆角、纸色底、细线分隔 */
+
+.records-page {
+  min-width: 0;
+}
+
+/* ---------- 筛选栏 ---------- */
+.records-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  min-width: 0;
+}
+
+.records-filters .swiss-field {
+  flex: 1 1 150px;
+  max-width: 240px;
+  min-width: 150px;
+}
+
+.records-filters__actions {
+  display: flex;
+  align-items: flex-end;
+  margin-left: auto;
+  padding-top: 24px;
+}
+
+.records-filters .records-inline-retry {
+  margin-top: 6px;
+}
+
+.records-inline-retry.swiss-button,
+.records-inline-button.swiss-button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.records-hint {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ---------- 表格单元 ---------- */
+.records-number {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.records-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.records-status--pending {
+  color: var(--warn);
+}
+
+.records-status--confirmed {
+  color: var(--accent);
+}
+
+.records-status--rejected {
+  color: var(--fail);
+}
+
+.records-status--other {
+  color: var(--muted);
+}
+
+.records-doc-link {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
+.records-doc-link:hover {
+  color: var(--ink);
+}
+
+/* ---------- 行内删除 ---------- */
+.records-row-action.swiss-button {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.records-delete-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.records-delete-hint {
+  color: var(--fail);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ---------- 反馈与状态 ---------- */
+.records-feedback {
+  margin: 0 0 16px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.records-feedback--fail {
+  border-left-color: var(--fail);
+}
+
+.records-state {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.records-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- 新增表单 ---------- */
+.records-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.records-form__full {
+  grid-column: 1 / -1;
+}
+
+.records-form__meta {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.records-form__error {
+  grid-column: 1 / -1;
+  padding: 9px 12px;
+  border-left: 3px solid var(--fail);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.records-form__error .records-inline-button {
+  margin-left: 8px;
+}
+
+@media (max-width: 900px) {
+  .records-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .records-filters__actions {
+    margin-left: 0;
+    padding-top: 0;
+  }
+}

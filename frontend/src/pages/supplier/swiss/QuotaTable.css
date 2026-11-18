@@ -1,0 +1,6 @@
+/* 配额表 · 超配额用 fail 色，文字与数字同时出现 */
+
+.quota-over {
+  color: var(--fail);
+  font-weight: 700;
+}

@@ -32,6 +32,8 @@ def _get_engine():
     try:
         os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
         os.environ.setdefault("HF_HOME", cache)
+        # 模型已在本地缓存（model_cached 已校验），禁止联网兜底。
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
         import torch  # noqa: F401
         from transformers import AutoModel, AutoProcessor
 

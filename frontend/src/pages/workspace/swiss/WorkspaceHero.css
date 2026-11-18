@@ -1,0 +1,135 @@
+/* 工作台主结论区 */
+
+.ws-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.52fr);
+  gap: 48px;
+  align-items: start;
+  padding: 26px 0 24px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ws-hero__main {
+  min-width: 0;
+}
+
+.ws-hero__label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ws-total-wrap {
+  min-width: 0;
+  margin-top: 10px;
+}
+
+.ws-total {
+  color: var(--ink);
+  font-family: var(--font-family-number);
+  font-size: clamp(34px, 3.9vw, 56px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.ws-total__rule {
+  display: block;
+  width: 112px;
+  height: 6px;
+  margin-top: 14px;
+  background: var(--lime);
+}
+
+.ws-hero__period {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.ws-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ws-hero__side {
+  min-width: 0;
+}
+
+.ws-identity {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ws-company {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.ws-industry {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+}
+
+.ws-meta {
+  margin: 6px 0 0;
+}
+
+.ws-meta__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 11.5px;
+}
+
+.ws-meta__row dt {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.ws-meta__row dd {
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.ws-meta__mono {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+}
+
+.ws-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (max-width: 1080px) {
+  .ws-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .ws-hero__side {
+    max-width: 520px;
+  }
+}

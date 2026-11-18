@@ -1,0 +1,46 @@
+@import './tokens.css';
+@import './print.css';
+
+/* 全局基础样式；组件样式放各自的 css 文件 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-body);
+  line-height: var(--font-body-line);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* 所有数值统一等宽，表格里纵向对齐 */
+.num {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

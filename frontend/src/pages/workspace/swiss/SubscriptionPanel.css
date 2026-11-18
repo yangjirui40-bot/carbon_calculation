@@ -1,0 +1,27 @@
+/* 订阅用量摘要 */
+
+.ws-sub {
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.ws-sub__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 11.5px;
+}
+
+.ws-sub__row dt {
+  color: var(--muted);
+}
+
+.ws-sub__row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}

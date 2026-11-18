@@ -1,0 +1,82 @@
+/* Scope 拆分 · 数值、占比与展示条 */
+
+.ws-scope-list {
+  min-width: 0;
+}
+
+.ws-scope-row {
+  display: grid;
+  grid-template-columns: 38px minmax(150px, 1.05fr) minmax(130px, 1.8fr) 104px;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid var(--rule-soft);
+  font-size: 13px;
+}
+
+.ws-scope-row:first-child {
+  border-top: 1px solid var(--rule);
+}
+
+.ws-scope-no {
+  color: var(--accent);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+}
+
+.ws-scope-name {
+  min-width: 0;
+  font-weight: 600;
+}
+
+.ws-scope-name small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.ws-scope-bar {
+  display: block;
+  height: 6px;
+  background: var(--rule-soft);
+}
+
+.ws-scope-bar i {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+
+.ws-scope-value {
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ws-scope-value strong {
+  font-family: var(--font-family-number);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ws-scope-value em {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-style: normal;
+}
+
+@media (max-width: 900px) {
+  .ws-scope-row {
+    grid-template-columns: 32px minmax(0, 1fr) 92px;
+  }
+
+  .ws-scope-bar {
+    display: none;
+  }
+}

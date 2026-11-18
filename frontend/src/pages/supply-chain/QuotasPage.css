@@ -1,0 +1,40 @@
+/* 配额与减排计划页 */
+
+.sc-feedback--spaced {
+  margin-top: 18px;
+}
+
+.sc-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 14px;
+}
+
+/* 进度细线：2px 轨道 + accent 填充 */
+.sc-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 110px;
+}
+
+.sc-progress__track {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  background: var(--rule-soft);
+}
+
+.sc-progress__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--accent);
+}
+
+.sc-progress__text {
+  color: var(--muted);
+  font-size: 10.5px;
+  white-space: nowrap;
+}

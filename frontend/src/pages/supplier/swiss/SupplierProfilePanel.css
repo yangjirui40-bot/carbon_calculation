@@ -1,0 +1,101 @@
+/* 供应商档案 · 左身份信息 + 右指标 */
+
+.supplier-profile {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.supplier-profile__name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.supplier-profile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.supplier-profile__id {
+  color: var(--ink);
+}
+
+.supplier-profile__risk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.supplier-profile__risk-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.risk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.risk-chip__dot {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
+
+.risk-chip--green {
+  color: var(--s2);
+}
+
+.risk-chip--yellow {
+  color: var(--warn);
+}
+
+.risk-chip--red {
+  color: var(--fail);
+}
+
+.risk-chip--neutral {
+  color: var(--muted);
+}
+
+.supplier-profile__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  padding-left: 24px;
+  border-left: 1px solid var(--rule);
+}
+
+@media (max-width: 900px) {
+  .supplier-profile {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .supplier-profile__stats {
+    padding-left: 0;
+    padding-top: 20px;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+}

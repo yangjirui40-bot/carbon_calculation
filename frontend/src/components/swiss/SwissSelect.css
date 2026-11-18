@@ -1,0 +1,60 @@
+/* 下划线选择框 */
+
+.swiss-select-wrap {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.swiss-select {
+  width: 100%;
+  height: 38px;
+  padding: 8px 20px 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+
+.swiss-select:hover {
+  border-bottom-color: var(--muted);
+}
+
+.swiss-select:focus {
+  border-bottom-color: var(--accent);
+}
+
+.swiss-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.swiss-select:disabled {
+  border-bottom-color: var(--rule-soft);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.swiss-select__caret {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  width: 0;
+  height: 0;
+  margin-top: -2px;
+  border-top: 5px solid var(--muted);
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  pointer-events: none;
+}
+
+.swiss-select-wrap:focus-within .swiss-select__caret {
+  border-top-color: var(--accent);
+}

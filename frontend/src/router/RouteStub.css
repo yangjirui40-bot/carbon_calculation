@@ -1,0 +1,6 @@
+/* 占位页只负责纵向节奏；留白、纸张底色与分隔线由壳层和瑞士组件提供 */
+.route-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}

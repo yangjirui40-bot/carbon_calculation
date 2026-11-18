@@ -1,0 +1,100 @@
+.review-side-panel {
+  border-top: 1px solid var(--ink);
+}
+
+.review-side-title {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.review-side-confidence {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.review-side-value {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+
+.review-side-value.is-ok {
+  color: var(--accent);
+}
+
+.review-side-value.is-review {
+  color: var(--warn);
+}
+
+.review-side-label {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.review-side-metrics {
+  margin: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.review-side-metrics > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.review-side-metrics dt {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.review-side-metrics dd {
+  margin: 0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+}
+
+.review-side-metrics dd.is-fail {
+  color: var(--fail);
+}
+
+.review-side-blocker,
+.review-side-error {
+  margin: 12px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--fail);
+  color: var(--fail);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.review-side-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.review-side-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.review-side-note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.65;
+}

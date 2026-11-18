@@ -1,0 +1,83 @@
+/* 企业工作台 · 仅本页布局；色值与字体全部来自 swiss-tokens.css */
+
+.ws-page {
+  min-width: 0;
+  padding-bottom: 36px;
+}
+
+.ws-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.85fr);
+  gap: 40px;
+  min-width: 0;
+}
+
+.ws-split--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---------- 加载骨架 ---------- */
+
+.ws-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 26px;
+}
+
+.ws-skeleton__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ws-skeleton__line,
+.ws-skeleton__row i {
+  display: block;
+  background: var(--rule-soft);
+  animation: ws-pulse 1.5s ease-in-out infinite;
+}
+
+.ws-skeleton__line.is-total {
+  width: 42%;
+  height: 54px;
+}
+
+.ws-skeleton__line.is-meta {
+  width: 28%;
+  height: 14px;
+}
+
+.ws-skeleton__line.is-table {
+  height: 180px;
+}
+
+.ws-skeleton__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ws-skeleton__row i {
+  height: 56px;
+}
+
+@keyframes ws-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (max-width: 1080px) {
+  .ws-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}

@@ -1,0 +1,9 @@
+.app-sider {
+  border-right: 1px solid var(--color-border);
+  background: var(--color-bg-container);
+}
+
+.app-sider .ant-menu {
+  padding: var(--space-3) var(--space-2);
+  border-inline-end: none !important;
+}

@@ -1,0 +1,40 @@
+/* 下划线输入框 */
+
+.swiss-input {
+  width: 100%;
+  height: 38px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: border-color 140ms ease;
+}
+
+.swiss-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.swiss-input:hover {
+  border-bottom-color: var(--muted);
+}
+
+.swiss-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.swiss-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.swiss-input:disabled {
+  border-bottom-color: var(--rule-soft);
+  color: var(--muted);
+  cursor: not-allowed;
+}

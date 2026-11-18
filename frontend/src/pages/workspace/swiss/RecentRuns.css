@@ -1,0 +1,105 @@
+/* 最近核算表 · 首列链接铺满整行 */
+
+.ws-runs-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.ws-runs {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+.ws-runs th {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--ink);
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ws-runs td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: middle;
+}
+
+.ws-runs th:first-child,
+.ws-runs td:first-child {
+  padding-left: 0;
+}
+
+.ws-runs th:last-child,
+.ws-runs td:last-child {
+  padding-right: 0;
+}
+
+.ws-runs .is-right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ws-runs__row {
+  position: relative;
+  transition: background-color 120ms ease;
+}
+
+.ws-runs__row:hover {
+  background: var(--paper-raised);
+}
+
+.ws-runs__id {
+  white-space: nowrap;
+}
+
+.ws-runs__link {
+  color: var(--ink);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11.5px;
+  text-decoration: none;
+}
+
+.ws-runs__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.ws-runs__link:hover {
+  color: var(--accent);
+}
+
+.ws-runs__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ws-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ws-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+}
+
+.ws-status--ok {
+  color: var(--accent);
+}
+
+.ws-status--fail {
+  color: var(--fail);
+}

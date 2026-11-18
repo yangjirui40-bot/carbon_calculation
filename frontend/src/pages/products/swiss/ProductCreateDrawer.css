@@ -1,0 +1,28 @@
+.product-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.product-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.product-form__error {
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--fail);
+  color: var(--fail);
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 520px) {
+  .product-form__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+}

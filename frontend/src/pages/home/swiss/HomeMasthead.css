@@ -1,0 +1,42 @@
+.home-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.home-brand-mark {
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+}
+
+.home-brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.home-brand-sub {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-mast-meta {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}

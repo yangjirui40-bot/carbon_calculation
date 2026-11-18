@@ -1,0 +1,25 @@
+.confidence-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-caption);
+  line-height: var(--font-caption-line);
+  white-space: nowrap;
+}
+
+.confidence-tag--passed {
+  color: var(--confidence-high);
+  background: var(--confidence-high-bg);
+}
+
+.confidence-tag--review {
+  color: var(--confidence-mid);
+  background: var(--confidence-mid-bg);
+}
+
+.confidence-tag--unknown {
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-hover);
+}

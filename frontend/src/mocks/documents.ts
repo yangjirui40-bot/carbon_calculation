@@ -1,0 +1,62 @@
+import type { DocumentItem } from '../api/types'
+
+/** 6 张模拟票据，覆盖待解析 pending、已解析 parsed、解析失败 failed */
+export const mockDocuments: DocumentItem[] = [
+  {
+    id: 'doc-001',
+    file_name: '电子元器件采购发票-20261012.pdf',
+    file_type: 'application/pdf',
+    parse_status: 'parsed',
+    uploaded_at: '2026-10-12T09:20:00',
+    total_amount: 10000,
+    currency: 'CNY',
+    confidence_summary: 0.72,
+  },
+  {
+    id: 'doc-002',
+    file_name: '电费发票-202609.png',
+    file_type: 'image/png',
+    parse_status: 'parsed',
+    uploaded_at: '2026-10-11T16:05:00',
+    total_amount: 3200,
+    currency: 'CNY',
+    confidence_summary: 0.98,
+  },
+  {
+    id: 'doc-003',
+    file_name: '运输费用单据-20261008.jpg',
+    file_type: 'image/jpeg',
+    parse_status: 'failed',
+    uploaded_at: '2026-10-08T10:42:00',
+    error_message: '文件模糊，无法识别价税合计',
+  },
+  {
+    id: 'doc-004',
+    file_name: 'PCB材料采购合同-20261014.pdf',
+    file_type: 'application/pdf',
+    parse_status: 'pending',
+    uploaded_at: '2026-10-14T14:10:00',
+    total_amount: 12000,
+    currency: 'CNY',
+  },
+  {
+    id: 'doc-005',
+    file_name: '柴油加油小票-20261009.jpg',
+    file_type: 'image/jpeg',
+    parse_status: 'parsed',
+    uploaded_at: '2026-10-09T08:30:00',
+    total_amount: 960,
+    currency: 'CNY',
+    confidence_summary: 0.88,
+  },
+  {
+    id: 'doc-006',
+    file_name: '办公用电复核单-20261010.pdf',
+    file_type: 'application/pdf',
+    parse_status: 'parsed',
+    uploaded_at: '2026-10-10T11:00:00',
+    total_amount: 2800,
+    currency: 'CNY',
+    confidence_summary: 0.96,
+  },
+]

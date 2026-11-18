@@ -1,0 +1,24 @@
+.results-num {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.results-mono {
+  font-family: var(--font-family-number);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.results-factor-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.results-factor-version {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}

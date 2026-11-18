@@ -1,0 +1,39 @@
+.trajectory-tab {
+  min-width: 0;
+}
+
+.trajectory-loading {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.trajectory-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.trajectory-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1100px) {
+  .trajectory-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .trajectory-stats {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}

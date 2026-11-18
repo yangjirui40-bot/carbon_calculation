@@ -1,0 +1,77 @@
+/* 快捷入口 · 细线分栏，0 圆角 */
+
+.supplier-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--rule);
+}
+
+.supplier-shortcut {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 22px 24px 22px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 120ms ease;
+}
+
+.supplier-shortcut + .supplier-shortcut {
+  padding-left: 24px;
+  border-left: 1px solid var(--rule);
+}
+
+.supplier-shortcut:hover {
+  background: var(--paper-raised);
+}
+
+.supplier-shortcut:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.supplier-shortcut__index {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.supplier-shortcut__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.supplier-shortcut__title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.supplier-shortcut__desc {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.supplier-shortcut__arrow {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .supplier-shortcuts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .supplier-shortcut + .supplier-shortcut {
+    padding-left: 0;
+    border-left: 0;
+  }
+}

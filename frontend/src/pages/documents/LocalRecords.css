@@ -1,0 +1,76 @@
+.local-records {
+  margin-top: 34px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink);
+}
+
+.local-records-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.local-records-head h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.local-records-head span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.local-records-list {
+  margin-top: 10px;
+}
+
+.local-record-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) 80px 150px 110px 80px;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 11px;
+}
+
+.local-record-row b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.local-record-row > span {
+  color: var(--muted);
+}
+
+.local-record-row .num {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10.5px;
+}
+
+.local-record-status {
+  justify-self: end;
+  color: var(--warn) !important;
+}
+
+.local-record-status.is-ok {
+  color: var(--accent) !important;
+}
+
+@media (max-width: 1000px) {
+  .local-record-row {
+    grid-template-columns: minmax(0, 1fr) 100px 120px;
+  }
+
+  .local-record-row > span:nth-child(2),
+  .local-record-row > span:nth-child(3),
+  .local-record-row > span:nth-child(5) {
+    display: none;
+  }
+}

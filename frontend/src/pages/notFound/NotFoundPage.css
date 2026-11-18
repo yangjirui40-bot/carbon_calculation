@@ -1,0 +1,161 @@
+@import '../../styles/swiss-tokens.css';
+
+/* 404 · 瑞士风格 */
+
+.nf-swiss {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.nf-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 44px;
+}
+
+.nf-masthead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 72px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.nf-mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent);
+}
+
+.nf-brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.nf-brand-sub {
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.nf-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 0 64px;
+}
+
+.nf-code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 112px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.nf-code::after {
+  content: "";
+  display: block;
+  width: 96px;
+  height: 6px;
+  margin-top: 18px;
+  background: var(--lime);
+}
+
+.nf-main h1 {
+  margin: 26px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.nf-main p {
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.nf-btn-primary,
+.nf-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  padding: 13px 18px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.nf-btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.nf-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.nf-btn-ghost {
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+}
+
+.nf-btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nf-btn-primary:focus-visible,
+.nf-btn-ghost:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.nf-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0 22px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 760px) {
+  .nf-wrap {
+    padding: 0 24px;
+  }
+
+  .nf-code {
+    font-size: 84px;
+  }
+
+  .nf-main h1 {
+    font-size: 22px;
+  }
+}

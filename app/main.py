@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .database import Base, SessionLocal, engine
@@ -36,6 +37,14 @@ from .security import decode_access_token
 from .metrics import HTTP_LATENCY, HTTP_REQUESTS, metrics_response, path_group
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
+# 前端构建产物：优先同仓库 backend/frontend/dist（GitHub/Docker 布局），
+# 兼容旧布局（frontend 为 backend 的兄弟目录）。
+_candidates = [
+    Path(__file__).resolve().parents[1] / "frontend" / "dist",
+    Path(__file__).resolve().parents[2] / "frontend" / "dist",
+]
+FRONTEND_DIST = next((p for p in _candidates if (p / "index.html").exists()), _candidates[0])
+FRONTEND_INDEX = FRONTEND_DIST / "index.html"
 
 
 @asynccontextmanager
@@ -140,7 +149,9 @@ def metrics():
 
 @app.get("/", include_in_schema=False)
 def index():
-    """内置企业管理前端（单页应用）。"""
+    """前端单页应用（优先 frontend/dist 构建产物，回退内置管理页）。"""
+    if FRONTEND_INDEX.exists():
+        return FileResponse(FRONTEND_INDEX)
     index_file = WEB_DIR / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
@@ -150,3 +161,22 @@ def index():
 @app.get("/healthz", tags=["健康检查"])
 def healthz():
     return {"status": "healthy", "algorithm_version": settings.ALGORITHM_VERSION}
+
+
+# ---------------------------------------------------------------------------
+# 前端静态托管（单源部署）：frontend/dist 存在时，/assets 与其余静态资源、
+# 前端路由（如 /login、/dashboard）全部由后端同源提供，SPA 回退到 index.html。
+# 所有 /api/v1、/docs、/metrics、/healthz 路由均在前面注册，优先级高于回退。
+# ---------------------------------------------------------------------------
+if FRONTEND_INDEX.exists():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa_fallback(full_path: str):
+        dist_root = FRONTEND_DIST.resolve()
+        candidate = (FRONTEND_DIST / full_path).resolve()
+        if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_INDEX)

@@ -26,7 +26,9 @@ services:
     restart: unless-stopped
 
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: carbonspeed-backend
     environment:
       DATABASE_URL: postgresql+psycopg2://carbonspeed:carbonspeed_2026_Db_x7KpQ2@db:5432/carbonspeed

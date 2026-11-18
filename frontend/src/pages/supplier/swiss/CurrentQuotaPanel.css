@@ -1,0 +1,22 @@
+/* 当前配额 · 三项指标 + 口径说明 */
+
+.current-quota__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.current-quota__note {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+@media (max-width: 760px) {
+  .current-quota__stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

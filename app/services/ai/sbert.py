@@ -29,6 +29,9 @@ def _get_engine():
     try:
         os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
         os.environ.setdefault("HF_HOME", cache)
+        # 模型已在本地缓存（model_cached 已校验），禁止联网兜底，避免冷启动时
+        # huggingface_hub 发起未认证请求导致接口挂起超时。
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
         from sentence_transformers import SentenceTransformer
 
         model = SentenceTransformer(settings.SBERT_MODEL, cache_folder=cache)

@@ -1,0 +1,27 @@
+@import '../../styles/swiss-tokens.css';
+@import './AuthPages.css';
+
+/* 注册页局部：5 个字段，表单间距收紧 */
+
+.auth-register .auth-form {
+  margin-top: 22px;
+}
+
+.auth-register .auth-field {
+  margin-bottom: 16px;
+}
+
+.auth-register .auth-head h2 {
+  font-size: 32px;
+}
+
+.auth-register .auth-notice,
+.auth-register .auth-error {
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .auth-register .auth-field {
+    margin-bottom: 18px;
+  }
+}

@@ -1,0 +1,207 @@
+/* 排放因子库 · 仅引用 swiss-tokens 变量，零圆角、纸色底、细线分隔 */
+
+.factors-page {
+  min-width: 0;
+}
+
+/* ---------- 管理员操作条（位于分区标题右侧） ---------- */
+.factors-admin-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.factors-admin-bar__button.swiss-button {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.factors-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- 反馈、派生结果与状态 ---------- */
+.factors-feedback {
+  margin: 0 0 16px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.factors-feedback--fail {
+  border-left-color: var(--fail);
+}
+
+.factors-derived {
+  margin-bottom: 18px;
+}
+
+.factors-derived__head {
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.factors-state {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ---------- 筛选栏 ---------- */
+.factors-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  min-width: 0;
+}
+
+.factors-filters .swiss-field {
+  flex: 1 1 150px;
+  max-width: 240px;
+  min-width: 150px;
+}
+
+.factors-filters__actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-left: auto;
+  padding-top: 24px;
+}
+
+.factors-count {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 28px;
+  white-space: nowrap;
+}
+
+.factors-inline-button.swiss-button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* ---------- 表格单元 ---------- */
+.factors-number {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.factors-origin {
+  display: inline-block;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.factors-caliber {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.factors-caliber--project {
+  color: var(--muted);
+}
+
+.factors-caliber--official {
+  color: var(--accent);
+}
+
+/* ---------- 因子集 ---------- */
+.factors-sets {
+  min-width: 0;
+}
+
+.factors-note {
+  margin: 0 0 18px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--rule);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.factors-set + .factors-set {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.factors-set__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.factors-set__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+.factors-set__meta {
+  color: var(--muted);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+/* ---------- 新建因子表单 ---------- */
+.factors-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.factors-form__full {
+  grid-column: 1 / -1;
+}
+
+.factors-form__error {
+  grid-column: 1 / -1;
+  padding: 9px 12px;
+  border-left: 3px solid var(--fail);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .factors-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .factors-filters__actions {
+    margin-left: 0;
+    padding-top: 0;
+  }
+}

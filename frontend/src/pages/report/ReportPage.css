@@ -1,0 +1,211 @@
+/* 报告详情 · 正式报告（公文式），页面在 SwissAppShell 内容区内 */
+
+.formal-report {
+  min-width: 0;
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.formal-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 0 0 48px;
+}
+
+.formal-state {
+  max-width: 640px;
+  padding: 40px 0 80px;
+}
+
+.formal-missing {
+  max-width: 560px;
+  padding: 60px 0 80px;
+}
+
+.formal-missing-kicker {
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.formal-missing h1 {
+  margin: 12px 0 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.formal-missing p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.formal-missing-link {
+  display: inline-block;
+  margin-top: 24px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid currentColor;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.formal-missing-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 打印：只保留报告纸面，隐藏壳层与工具栏 */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    background: var(--color-bg-container);
+  }
+
+  body:has(.formal-report) .swiss-app {
+    display: block;
+    min-height: 0;
+    background: var(--color-bg-container);
+  }
+
+  body:has(.formal-report) .swiss-app__header,
+  body:has(.formal-report) .swiss-app__rail,
+  body:has(.formal-report) .swiss-app__footer {
+    display: none !important;
+  }
+
+  body:has(.formal-report) .swiss-app__body {
+    display: block;
+  }
+
+  body:has(.formal-report) .swiss-app__content {
+    padding: 0;
+  }
+
+  .report-toolbar {
+    display: none !important;
+  }
+
+  .formal-report {
+    min-height: 0;
+  }
+
+  .formal-pages {
+    display: block;
+    padding: 0;
+  }
+
+  .formal-sheet {
+    display: block;
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--color-bg-container);
+    font-size: 9.5pt;
+    line-height: 1.65;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .formal-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .formal-head {
+    font-size: 7pt;
+  }
+
+  .formal-head b {
+    font-size: 8pt;
+  }
+
+  .formal-title {
+    margin-top: 0;
+    font-size: 18pt;
+  }
+
+  .formal-subtitle {
+    font-size: 9pt;
+  }
+
+  .formal-meta {
+    margin-top: 10pt;
+    font-size: 8.5pt;
+  }
+
+  .formal-section {
+    margin-top: 12pt;
+    break-inside: avoid;
+  }
+
+  .formal-section.formal-section--table {
+    break-inside: auto;
+  }
+
+  .formal-section h2 {
+    font-size: 11.5pt;
+    break-after: avoid;
+  }
+
+  .formal-section p,
+  .formal-section li {
+    font-size: 9pt;
+    line-height: 1.6;
+  }
+
+  .formal-table {
+    font-size: 8.5pt;
+    table-layout: fixed;
+  }
+
+  .formal-table th,
+  .formal-table td {
+    padding: 4pt 5pt;
+    word-break: break-word;
+  }
+
+  .formal-table thead {
+    display: table-header-group;
+  }
+
+  .formal-table tr {
+    break-inside: avoid;
+  }
+
+  .formal-total-line {
+    font-size: 9pt;
+  }
+
+  .formal-stat__label {
+    font-size: 7.5pt;
+  }
+
+  .formal-stat__value {
+    font-size: 11pt;
+  }
+
+  .formal-foot {
+    margin-top: 14pt;
+    padding-top: 4pt;
+    font-size: 7pt;
+  }
+}

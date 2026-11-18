@@ -1,0 +1,338 @@
+/* 供应链协同四页共享样式：只用 swiss-tokens 变量，0 圆角、纸色底、细线分隔 */
+
+.sc-page {
+  min-width: 0;
+}
+
+/* ---------- 子页导航 ---------- */
+.sc-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.sc-subnav__link {
+  position: relative;
+  padding: 9px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.sc-subnav__link:hover {
+  color: var(--ink);
+}
+
+.sc-subnav__link.is-active {
+  color: var(--ink);
+  font-weight: 700;
+  border-bottom-color: var(--accent);
+}
+
+.sc-subnav__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 企业选择 ---------- */
+.sc-company-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+  margin-top: 16px;
+}
+
+.sc-company-bar__error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--fail);
+  color: var(--fail);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.sc-company-bar__error .swiss-button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* ---------- 状态与提示 ---------- */
+.sc-state {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sc-hint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.sc-feedback {
+  margin: 0 0 16px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sc-feedback--fail {
+  border-left-color: var(--fail);
+}
+
+.sc-notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--warn);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+/* ---------- 风险与状态 ---------- */
+.sc-risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sc-risk__dot {
+  width: 7px;
+  height: 7px;
+  background: currentColor;
+}
+
+.sc-risk--red {
+  color: var(--fail);
+}
+
+.sc-risk--yellow {
+  color: var(--warn);
+}
+
+.sc-risk--green {
+  color: var(--accent);
+}
+
+.sc-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sc-status--ok {
+  color: var(--accent);
+}
+
+.sc-status--warn {
+  color: var(--warn);
+}
+
+.sc-status--fail {
+  color: var(--fail);
+}
+
+.sc-status--muted {
+  color: var(--muted);
+}
+
+.sc-negative {
+  color: var(--fail);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sc-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* ---------- 表单 ---------- */
+.sc-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.sc-form__full {
+  grid-column: 1 / -1;
+}
+
+.sc-form__error {
+  grid-column: 1 / -1;
+  padding: 9px 12px;
+  border-left: 3px solid var(--fail);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.sc-form__success {
+  border-left-color: var(--accent);
+}
+
+.sc-form__meta {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.sc-form__readonly {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 9px 12px;
+  border-left: 2px solid var(--accent);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.sc-form__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sc-inline-button.swiss-button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* ---------- 筛选栏 ---------- */
+.sc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px 20px;
+  min-width: 0;
+}
+
+.sc-filters .swiss-field {
+  flex: 1 1 150px;
+  max-width: 220px;
+  min-width: 140px;
+}
+
+.sc-filters__clear {
+  padding-bottom: 4px;
+}
+
+/* ---------- 表格单元 ---------- */
+.sc-cell-name {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sc-cell-id {
+  color: var(--muted);
+  font-family: var(--font-family-number);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.sc-row-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.sc-row-actions .swiss-button {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* ---------- 链接按钮 ---------- */
+.sc-link-button {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sc-link-button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.sc-link-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 网格 ---------- */
+.sc-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.sc-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .sc-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sc-stat-grid,
+  .sc-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

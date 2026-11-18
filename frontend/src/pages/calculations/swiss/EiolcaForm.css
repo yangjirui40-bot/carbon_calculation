@@ -1,0 +1,19 @@
+.eiolca-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.eiolca-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.eiolca-form__note {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}

@@ -1,9 +1,22 @@
+# 构建上下文 = backend/（仓库根；docker compose -f docker-compose.yml up -d --build）
 vendor/
 models_cache/
 storage/
 uploads/
+backups/
+.env
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+data/io/downloads/
+tests/
+.git/
+.github/
 __pycache__/
+**/__pycache__/
 *.pyc
 .venv/
-.env
 _piptmp/
+*.log
+_acl_recovery/
+deploy/

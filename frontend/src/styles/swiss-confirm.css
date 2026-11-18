@@ -1,0 +1,116 @@
+/* ============================================================
+   AntD 确认弹窗的瑞士风格覆盖
+   仅在 modal.confirm 传入 rootClassName: 'swiss-confirm' 时生效，
+   不影响其它 AntD 弹窗。
+   ============================================================ */
+
+.swiss-confirm .ant-modal-mask {
+  background: rgba(20, 33, 28, 0.35);
+}
+
+/* AntD v6 的确认弹窗容器是 .ant-modal-container（旧版为 .ant-modal-content） */
+.swiss-confirm .ant-modal-container {
+  padding: 0;
+  border: 1px solid var(--rule, #d3ccbd);
+  border-radius: 0;
+  background: var(--paper-raised, #f7f4ec);
+  box-shadow: none;
+  color: var(--ink, #14211c);
+  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.swiss-confirm .ant-modal-confirm-body {
+  display: block;
+  padding: 24px 26px 0;
+}
+
+.swiss-confirm .ant-modal-confirm-body > .anticon {
+  display: none;
+}
+
+.swiss-confirm .ant-modal-confirm-paragraph {
+  display: block;
+  max-width: none;
+}
+
+.swiss-confirm .ant-modal-confirm-title {
+  color: var(--ink, #14211c);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.swiss-confirm .ant-modal-confirm-content {
+  margin: 10px 0 0;
+  margin-inline-start: 0;
+  color: var(--muted, #6d726a);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.swiss-confirm .ant-modal-confirm-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 0 26px 22px;
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn {
+  height: 38px;
+  margin: 0 !important;
+  padding: 0 16px;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-default {
+  border: 1px solid var(--rule, #d3ccbd);
+  background: transparent;
+  color: var(--ink, #14211c);
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-default:not(:disabled):hover {
+  border-color: var(--ink, #14211c) !important;
+  background: transparent !important;
+  color: var(--ink, #14211c) !important;
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-primary {
+  border: 1px solid var(--accent, #0e3b2e);
+  background: var(--accent, #0e3b2e);
+  color: var(--accent-ink, #e8ffd0);
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-primary:not(:disabled):hover {
+  border-color: var(--accent, #0e3b2e) !important;
+  background: var(--accent, #0e3b2e) !important;
+  color: var(--accent-ink, #e8ffd0) !important;
+}
+
+/* 危险操作：透明底 + fail 细线，保持瑞士风格的克制 */
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-dangerous {
+  border: 1px solid var(--fail, #a33a2a) !important;
+  background: transparent !important;
+  color: var(--fail, #a33a2a) !important;
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-dangerous:not(:disabled):hover {
+  border-color: var(--fail, #a33a2a) !important;
+  background: rgba(163, 58, 42, 0.08) !important;
+  color: var(--fail, #a33a2a) !important;
+}
+
+.swiss-confirm .ant-modal-confirm-btns .ant-btn-loading::before {
+  background: transparent;
+}
+
+@media (max-width: 480px) {
+  .swiss-confirm .ant-modal {
+    max-width: calc(100vw - 32px);
+  }
+}

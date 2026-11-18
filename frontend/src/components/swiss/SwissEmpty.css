@@ -1,0 +1,29 @@
+/* 空状态 */
+
+.swiss-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 40px 0;
+}
+
+.swiss-empty__title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+}
+
+.swiss-empty__desc {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.swiss-empty__action {
+  margin-top: 16px;
+}

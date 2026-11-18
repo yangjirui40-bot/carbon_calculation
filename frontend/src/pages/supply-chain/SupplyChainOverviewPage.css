@@ -1,0 +1,54 @@
+/* 供应链总览页布局 */
+
+.sc-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.8fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.sc-overview-side {
+  min-width: 0;
+}
+
+.sc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.sc-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.sc-legend__swatch {
+  width: 9px;
+  height: 9px;
+  background: var(--muted);
+}
+
+.sc-legend__swatch--company {
+  background: var(--accent);
+}
+
+.sc-topology-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1100px) {
+  .sc-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
