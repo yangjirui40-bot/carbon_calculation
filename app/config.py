@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     FIRST_ADMIN_PASSWORD: str = "admin123"
     FIRST_ADMIN_EMAIL: str = "admin@carbonspeed.local"
 
+    # ---------- 生产安全 ----------
+    # 生产环境置 false：对外隐藏 /docs /redoc /openapi.json（Caddy 网关同样拦截）
+    DOCS_ENABLED: bool = True
     # ---------- 企业级安全 ----------
     # 敏感数据 AES-256-GCM 加密密钥（为空时由 SECRET_KEY 派生）
     DATA_ENC_KEY: str = ""

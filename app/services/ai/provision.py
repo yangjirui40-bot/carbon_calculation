@@ -27,6 +27,10 @@ def provision() -> dict:
             ("ser", settings.SER_MODEL),
             ("sbert", settings.SBERT_MODEL),
         ):
+            if not model:  # 未配置的模型跳过（如生产关闭 SER）
+                report[name] = {"model": "", "ok": True, "skipped": True}
+                print(f"[SKIP] {name}: 未配置模型")
+                continue
             try:
                 path = snapshot_download(
                     repo_id=model,

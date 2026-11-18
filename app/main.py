@@ -55,7 +55,12 @@ async def lifespan(app: FastAPI):
     stop_worker()
 
 
-app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+    **({} if settings.DOCS_ENABLED else {"docs_url": None, "redoc_url": None, "openapi_url": None}),
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -175,6 +180,11 @@ if FRONTEND_INDEX.exists():
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa_fallback(full_path: str):
+        # 生产安全：/docs /redoc /openapi.json 在 DOCS_ENABLED=false 时未被注册，
+        # 此处返回 404 而不是落入 SPA 回退（双保险，网关 Caddy 同样拦截）。
+        if full_path in ("docs", "redoc", "openapi.json") or \
+                full_path.startswith(("docs/", "redoc/")):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
         dist_root = FRONTEND_DIST.resolve()
         candidate = (FRONTEND_DIST / full_path).resolve()
         if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
