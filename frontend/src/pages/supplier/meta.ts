@@ -5,9 +5,10 @@ import { EMPTY_VALUE } from '../../utils/format'
 
 /** 供应商门户的展示文案与格式规则；页面只引用，不重复写映射 */
 
-export type RiskTone = 'green' | 'yellow' | 'red'
+export type RiskTone = 'green' | 'yellow' | 'red' | 'neutral'
 
 export const RISK_META: Record<RiskLevel, { label: string; tone: RiskTone }> = {
+  unknown: { label: '数据不足，待补充', tone: 'neutral' },
   green: { label: '低风险', tone: 'green' },
   yellow: { label: '中风险', tone: 'yellow' },
   red: { label: '高风险', tone: 'red' },

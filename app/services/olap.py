@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from sqlalchemy import func, text
+from ..models.enterprise_controls import WarehouseRefresh
 
 from ..models import (
     BusinessRecord,
@@ -26,13 +28,18 @@ _CATEGORY_SCOPE = {
 }
 
 
-def refresh_olap(db) -> dict:
-    """全量重建星型模型（维度 upsert + 事实表重建）。"""
-    factors = load_factors_from_db(db)
+def refresh_olap(db, company_id: int | None = None) -> dict:
+    """更新指定企业的分析事实，维护任务可显式刷新全库。"""
+    if db.bind.dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(79223105)"))
+    factors = load_factors_from_db(db, company_id=company_id, include_private=company_id is None)
+
+    def scoped(query, column):
+        return query.filter(column == company_id) if company_id is not None else query
 
     # 维度 upsert
     company_keys = {}
-    for c in db.query(Company).all():
+    for c in scoped(db.query(Company), Company.id).all():
         dim = db.query(DimCompany).filter(DimCompany.company_id == c.id).first()
         if dim is None:
             dim = DimCompany(company_id=c.id, code=c.code, name=c.name,
@@ -44,7 +51,7 @@ def refresh_olap(db) -> dict:
         company_keys[c.id] = dim.company_key
 
     period_keys = {}
-    for (period,) in db.query(BusinessRecord.period).distinct().all():
+    for (period,) in scoped(db.query(BusinessRecord.period), BusinessRecord.company_id).distinct().all():
         dim = db.query(DimPeriod).filter(DimPeriod.period == period).first()
         if dim is None:
             y, m = (period.split("-") + ["1", "1"])[:2]
@@ -58,13 +65,13 @@ def refresh_olap(db) -> dict:
     for category, f in categories.items():
         dim = db.query(DimCategory).filter(DimCategory.category == category).first()
         if dim is None:
-            dim = DimCategory(category=category, scope=_CATEGORY_SCOPE.get(category, "scope3"))
+            dim = DimCategory(category=category, scope=f.scope or _CATEGORY_SCOPE.get(category, "scope3"))
             db.add(dim)
             db.flush()
         category_keys[category] = dim.category_key
 
     supplier_keys = {}
-    for s in db.query(Supplier).all():
+    for s in scoped(db.query(Supplier), Supplier.company_id).all():
         dim = db.query(DimSupplier).filter(DimSupplier.supplier_id == s.supplier_id).first()
         if dim is None:
             dim = DimSupplier(supplier_id=s.supplier_id, name=s.name, industry=s.industry,
@@ -74,19 +81,25 @@ def refresh_olap(db) -> dict:
         supplier_keys[s.supplier_id] = dim.supplier_key
 
     # 事实表重建
-    db.query(FactEmission).delete()
-    db.query(FactCompanyEmission).delete()
+    facts = db.query(FactEmission)
+    totals = db.query(FactCompanyEmission)
+    if company_id is not None:
+        key = company_keys[company_id]
+        facts = facts.filter(FactEmission.company_key == key)
+        totals = totals.filter(FactCompanyEmission.company_key == key)
+    facts.delete(synchronize_session=False)
+    totals.delete(synchronize_session=False)
     agg: dict[tuple, dict] = defaultdict(lambda: {"s1": 0.0, "s2": 0.0, "s3": 0.0, "n": 0})
 
-    for r in db.query(BusinessRecord).filter(BusinessRecord.review_status == "confirmed").all():
+    for r in scoped(db.query(BusinessRecord), BusinessRecord.company_id).filter(BusinessRecord.review_status == "confirmed").all():
         factor = factors.get(r.factor_id)
         if factor is None:
             continue
         ef = float(factor["value"])
-        if r.scope in ("scope1", "scope2") and r.quantity:
+        if r.quantity is not None and r.unit and not factor["unit"].endswith("/CNY"):
             e = r.quantity * ef
             activity, amount = r.quantity, None
-        elif r.scope == "scope3" and r.amount:
+        elif r.amount is not None and factor["unit"].endswith("/CNY"):
             e = r.amount * ef
             activity, amount = None, r.amount
         else:
@@ -115,9 +128,12 @@ def refresh_olap(db) -> dict:
                                    scope1=round(a["s1"], 6), scope2=round(a["s2"], 6),
                                    scope3=round(a["s3"], 6), total=round(total, 6),
                                    record_count=a["n"]))
+    for cid, key in company_keys.items():
+        periods = [value for (company_key, _), value in agg.items() if company_key == key]
+        db.add(WarehouseRefresh(company_id=cid, activities=sum(v["n"] for v in periods), periods=len(periods)))
     db.commit()
-    return {"fact_emission_rows": db.query(FactEmission).count(),
-            "fact_company_emission_rows": db.query(FactCompanyEmission).count()}
+    return {"fact_emission_rows": sum(v["n"] for v in agg.values()),
+            "fact_company_emission_rows": len(agg)}
 
 
 # ---------- 星型聚合查询（驾驶舱数据源） ----------
@@ -143,16 +159,16 @@ def star_ring(db, company_id: int) -> list[dict] | None:
         return None
     latest = (db.query(FactCompanyEmission)
               .filter(FactCompanyEmission.company_key == dim.company_key)
-              .order_by(FactCompanyEmission.period_key.desc()).first())
+              .join(DimPeriod, FactCompanyEmission.period_key == DimPeriod.period_key)
+              .order_by(DimPeriod.period.desc()).first())
     if latest is None:
         return None
-    rows = (db.query(DimCategory, FactEmission)
+    rows = (db.query(DimCategory.category, DimCategory.scope, func.sum(FactEmission.emissions_kgco2e))
             .join(FactEmission, FactEmission.category_key == DimCategory.category_key)
-            .filter(FactEmission.company_key == dim.company_key,
-                    FactEmission.period_key == latest.period_key).all())
-    return [{"category": c.category, "scope": c.scope,
-             "emissions_kgco2e": round(sum(x.emissions_kgco2e for _, x in rows if x.category_key == c.category_key), 6)}
-            for c, _ in rows]
+            .filter(FactEmission.company_key == dim.company_key, FactEmission.period_key == latest.period_key)
+            .group_by(DimCategory.category, DimCategory.scope).order_by(DimCategory.category))
+    return [{"category": category, "scope": scope, "emissions_kgco2e": round(total, 6)}
+            for category, scope, total in rows]
 
 
 def star_trend(db, company_id: int) -> list[dict] | None:

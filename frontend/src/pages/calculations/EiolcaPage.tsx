@@ -1,3 +1,4 @@
+import ResearchEstimate from './ResearchEstimate'
 import { useState } from 'react'
 import { calculationsApi } from '../../api'
 import type { EIOLCAResultData, EngineResponse } from '../../api/types'
@@ -52,6 +53,7 @@ export default function EiolcaPage() {
         backTo={{ to: '/calculations', label: '核算中心' }}
       />
 
+      <ResearchEstimate />
       <div className="eiolca-grid">
         <SwissSection kicker="输入" title="采购金额" extra={<span>单位：元</span>}>
           <EiolcaForm loading={submitting} onSubmit={handleSubmit} />

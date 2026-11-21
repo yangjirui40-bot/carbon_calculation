@@ -1,7 +1,7 @@
 """绿色金融审计路由：穿透核查、区块链哈希存证、审计日志（多租户隔离）。"""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/audit", tags=["绿色金融审计"])
 def _check_run_access(db, user: User, run_id: str) -> None:
     run = db.query(CalculationRun).filter(CalculationRun.run_id == run_id).first()
     if run is None:
-        return
+        raise HTTPException(status_code=404, detail="核算记录不存在")
     check_company_access(db, user, run.company_id)
 
 
@@ -42,7 +42,7 @@ def logs(run_id: str | None = None, limit: int = 100, db: Session = Depends(get_
          user: User = Depends(get_current_user)):
     if run_id:
         _check_run_access(db, user, run_id)
-    return svc.list_audit_logs(db, run_id=run_id, limit=limit)
+    return svc.list_audit_logs(db, run_id=run_id, limit=min(max(limit, 1), 1000), user=user)
 
 
 @router.get("/export/audit-log")
@@ -50,4 +50,4 @@ def export_audit_log(run_id: str | None = None, db: Session = Depends(get_db),
                      user: User = Depends(get_current_user)):
     if run_id:
         _check_run_access(db, user, run_id)
-    return {"logs": svc.list_audit_logs(db, run_id=run_id, limit=1000)}
+    return {"logs": svc.list_audit_logs(db, run_id=run_id, limit=1000, user=user)}

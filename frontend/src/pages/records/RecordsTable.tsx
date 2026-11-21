@@ -19,6 +19,7 @@ type RecordsTableProps = {
   canWrite: boolean
   pendingDeleteNo: string | null
   deleting: boolean
+  onEditClassification: (record: BusinessRecord) => void
   onRequestDelete: (recordNo: string) => void
   onConfirmDelete: () => void
   onCancelDelete: () => void
@@ -55,6 +56,7 @@ export default function RecordsTable({
   canWrite,
   pendingDeleteNo,
   deleting,
+  onEditClassification,
   onRequestDelete,
   onConfirmDelete,
   onCancelDelete,
@@ -65,6 +67,7 @@ export default function RecordsTable({
   columns.push(
     { key: 'period', title: '期间' },
     { key: 'category', title: '类别' },
+    { key: 'location', title: '车间 / 产线' },
     { key: 'scope', title: 'Scope' },
     { key: 'value', title: '活动量 / 金额', align: 'right' },
     { key: 'factor_id', title: '因子' },
@@ -86,6 +89,7 @@ export default function RecordsTable({
       company_name: companyNames.get(record.company_id) ?? `#${record.company_id}`,
       period: record.period,
       category: categoryLabel(record.category),
+      location: [record.site_name, record.workshop, record.production_line].filter(Boolean).join(" / ") || "—",
       scope: scopeLabel(record.scope),
       value: renderValue(record),
       factor_id: record.factor_id,
@@ -133,6 +137,10 @@ export default function RecordsTable({
           </SwissButton>
         </span>
       ) : (
+        <span className="records-row-actions">
+        <SwissButton variant="ghost" className="records-row-action" onClick={() => onEditClassification(record)}>
+          {record.review_status === 'pending' && record.document_id == null ? '复核' : '归集'}
+        </SwissButton>
         <SwissButton
           variant="ghost"
           className="records-row-action"
@@ -141,6 +149,7 @@ export default function RecordsTable({
         >
           删除
         </SwissButton>
+        </span>
       )
     }
 

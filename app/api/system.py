@@ -1,7 +1,7 @@
 """系统运维路由：AI 引擎状态、异步任务查询。"""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -11,6 +11,7 @@ from ..services.ai import layout as layout_ai
 from ..services.ai import sbert as sbert_ai
 from ..services.ai import ser as ser_ai
 from ..services.ai import llm as llm_ai
+from ..services.ai.invoice_verify import verification_configured
 from ..config import settings
 
 router = APIRouter(prefix="/system", tags=["系统运维"])
@@ -35,13 +36,14 @@ def ai_status(_: User = Depends(get_current_user)):
             "provisioned": ser_ai.model_cached(),
             "loaded": ser_ai.is_loaded(),
             "enabled": getattr(settings, "SER_ENABLED", False),
-            "note": "公开中文 SER 检查点质量不足，默认关闭；按 train_ser.py 自有数据微调后启用",
+            "note": "可选增强：需完成目标票据评估并确认模型许可后启用；未启用时使用OCR与规则复核",
         },
         "sbert": {
             "model": settings.SBERT_MODEL,
             "provisioned": sbert_ai.model_cached(),
             "loaded": sbert_ai.is_loaded(),
         },
+        "invoice_verification": {"configured": verification_configured()},
         "llm": {
             "enabled": settings.llm_enabled,
             "model": settings.LLM_MODEL,
@@ -52,10 +54,18 @@ def ai_status(_: User = Depends(get_current_user)):
 
 
 @router.get("/jobs/{job_id}")
-def get_job(job_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def get_job(job_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     j = db.get(Job, job_id)
     if not j:
         return {"job_id": job_id, "found": False}
+    if user.role != ROLE_ADMIN:
+        from ..models import SourceDocument
+        from ..deps import check_company_access
+        payload = j.payload or {}
+        document = db.get(SourceDocument, payload.get("document_id")) if payload.get("document_id") else None
+        if document is None:
+            raise HTTPException(status_code=403, detail="无权查看该任务")
+        check_company_access(db, user, document.company_id)
     return {
         "job_id": j.id, "job_type": j.job_type, "status": j.status,
         "result": j.result, "error": j.error, "attempts": j.attempts,
@@ -66,7 +76,7 @@ def get_job(job_id: int, db: Session = Depends(get_db), _: User = Depends(get_cu
 
 @router.get("/jobs")
 def list_jobs(db: Session = Depends(get_db),
-              _: User = Depends(require_roles(ROLE_ADMIN, ROLE_AUDITOR))):
+              _: User = Depends(require_roles(ROLE_ADMIN))):
     jobs = db.query(Job).order_by(Job.id.desc()).limit(100).all()
     return [
         {"job_id": j.id, "job_type": j.job_type, "status": j.status, "error": j.error,
@@ -113,3 +123,14 @@ def schema_info(_: User = Depends(get_current_user)):
             },
         }
     }
+
+
+@router.get("/model-evaluations/{company_id}")
+def model_evaluations(company_id:int,db:Session=Depends(get_db),user:User=Depends(get_current_user)):
+    from ..deps import check_company_access
+    from ..models.enterprise_domains import ModelEvaluation,ModelRelease
+    check_company_access(db,user,company_id)
+    rows=db.query(ModelEvaluation,ModelRelease).join(ModelRelease,ModelRelease.id==ModelEvaluation.model_release_id).filter(
+        ModelEvaluation.tenant_id==company_id).order_by(ModelEvaluation.id.desc()).limit(100)
+    return [{"checkpoint_sha256":r.artifact_hash,"split_sha256":e.data_split_hash,"trained":e.training_performed,
+             "metrics":e.metrics,"scope":e.scope_note,"at":e.evaluated_at} for e,r in rows]

@@ -2,7 +2,7 @@
 
 官方值来源：
 - 电力：生态环境部、国家统计局《关于发布2022年电力二氧化碳排放因子的公告》(2024-12)：
-  全国 0.5703 kgCO2e/kWh（不含市场化交易非化石能源电量）；华中 0.5395；湖南 0.4900。
+  全国 0.5366 kgCO2e/kWh（全国平均）；华中 0.5395；湖南 0.4900。
   《关于发布2024年电力碳足迹因子数据的公告》(2025-10)：全国平均碳足迹因子 0.5777 kgCO2e/kWh（碳足迹口径）。
 - 柴油：按《温室气体排放核算方法与报告指南》缺省值热值法：
   42.652 GJ/t × 0.0202 tC/GJ × 98% × 44/12 × 0.84 kg/L ≈ 2.60 kgCO2e/L。
@@ -17,24 +17,24 @@ OFFICIAL_FACTORS: list[dict] = [
         factor_id="MEE_ELEC_2022_NAT",
         category="electricity",
         scope="scope2",
-        value=0.5703,
-        unit="kgCO2e/kWh",
+        value=0.5366,
+        unit="kgCO2/kWh",
         version="official-2022",
         origin="生态环境部、国家统计局《关于发布2022年电力二氧化碳排放因子的公告》(2024-12)",
         is_demo=False,
-        uncertainty_pct=5.0,
-        description="2022年全国电力平均CO2排放因子（不含市场化交易的非化石能源电量）",
+        uncertainty_pct=None,
+        description="2022年全国电力平均CO2排放因子（全国平均口径）",
     ),
     dict(
         factor_id="MEE_ELEC_2022_HUNAN",
         category="electricity",
         scope="scope2",
         value=0.4900,
-        unit="kgCO2e/kWh",
+        unit="kgCO2/kWh",
         version="official-2022-hunan",
         origin="生态环境部、国家统计局《关于发布2022年电力二氧化碳排放因子的公告》(2024-12)",
         is_demo=False,
-        uncertainty_pct=5.0,
+        uncertainty_pct=None,
         description="2022年湖南省电力平均CO2排放因子（演示企业所在地口径）",
     ),
     dict(
@@ -42,11 +42,11 @@ OFFICIAL_FACTORS: list[dict] = [
         category="electricity",
         scope="scope2",
         value=0.5395,
-        unit="kgCO2e/kWh",
+        unit="kgCO2/kWh",
         version="official-2022-hz",
         origin="生态环境部、国家统计局《关于发布2022年电力二氧化碳排放因子的公告》(2024-12)",
         is_demo=False,
-        uncertainty_pct=5.0,
+        uncertainty_pct=None,
         description="2022年华中区域电网电力平均CO2排放因子",
     ),
     dict(
@@ -58,7 +58,7 @@ OFFICIAL_FACTORS: list[dict] = [
         version="official-2024-footprint",
         origin="生态环境部、国家统计局、国家能源局《关于发布2024年电力碳足迹因子数据的公告》(2025-10)",
         is_demo=False,
-        uncertainty_pct=5.0,
+        uncertainty_pct=None,
         description="2024年全国电力平均碳足迹因子（碳足迹口径，含输配电，用于产品碳足迹核算）",
     ),
     dict(
@@ -70,7 +70,7 @@ OFFICIAL_FACTORS: list[dict] = [
         version="official-2022",
         origin="《温室气体排放核算方法与报告指南》缺省值（热值法：42.652GJ/t×0.0202tC/GJ×98%×44/12×0.84kg/L）",
         is_demo=False,
-        uncertainty_pct=5.0,
+        uncertainty_pct=None,
         description="柴油燃烧 CO2 排放因子（按指南缺省参数计算）",
     ),
     dict(
@@ -82,7 +82,7 @@ OFFICIAL_FACTORS: list[dict] = [
         version="official-2022",
         origin="《中国产品全生命周期温室气体排放系数集》常用值",
         is_demo=False,
-        uncertainty_pct=5.0,
+        uncertainty_pct=None,
         description="汽油燃烧 CO2 排放因子（备用类别）",
     ),
 ]

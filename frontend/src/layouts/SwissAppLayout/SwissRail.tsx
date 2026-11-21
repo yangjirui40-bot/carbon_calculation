@@ -1,67 +1,56 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import {
+  AppstoreOutlined, AuditOutlined, BarChartOutlined, BarsOutlined, CalculatorOutlined,
+  FileDoneOutlined, FileTextOutlined, FundOutlined, GoldOutlined, HddOutlined,
+  InteractionOutlined, ProfileOutlined, SettingOutlined, TeamOutlined, ThunderboltOutlined,
+} from '@ant-design/icons'
 import './SwissRail.css'
 
-export type SwissRailItem = {
-  key: string
-  label: string
-  to: string
-  disabled?: boolean
-}
+export type SwissRailItem = { key: string; label: string; to: string; disabled?: boolean }
+export type SwissRailGroup = { key: string; label: string; items: SwissRailItem[] }
 
-export type SwissRailGroup = {
-  key: string
-  label: string
-  items: SwissRailItem[]
+const icons = {
+  workspace: AppstoreOutlined,
+  dashboard: BarChartOutlined,
+  documents: FileTextOutlined,
+  records: ProfileOutlined,
+  factors: HddOutlined,
+  calculations: CalculatorOutlined,
+  eiolca: FundOutlined,
+  products: GoldOutlined,
+  reports: FileDoneOutlined,
+  simulator: ThunderboltOutlined,
+  'supply-chain': InteractionOutlined,
+  'supply-chain-suppliers': TeamOutlined,
+  audit: AuditOutlined,
 }
 
 export type SwissRailProps = {
-  /** 一层导航项（供应商门户等无分组场景） */
   items?: SwissRailItem[]
-  /** 可折叠分组导航（主应用）；默认全部收起，点击分组标题展开 */
   groups?: SwissRailGroup[]
-  /** 受控当前项；不传时按路由匹配 */
   activeKey?: string
 }
 
-/**
- * 左侧主导航：一层链接或可折叠分组。
- * 分组默认收起，标题为按钮，点击展开/收起；当前路由所在分组以强调色提示。
- */
 export default function SwissRail({ items, groups, activeKey }: SwissRailProps) {
-  const controlled = activeKey !== undefined
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [open, setOpen] = useState(false)
 
-  function toggleGroup(key: string) {
-    setOpenGroups((current) => ({ ...current, [key]: !current[key] }))
-  }
-
-  function renderItems(list: SwissRailItem[]): ReactNode {
+  function renderItems(list: SwissRailItem[]) {
     return list.map((item) => {
+      const Icon = icons[item.key as keyof typeof icons] ?? SettingOutlined
       if (item.disabled) {
-        return (
-          <span
-            key={item.key}
-            className="swiss-rail__link swiss-rail__link--disabled"
-            aria-disabled="true"
-          >
-            {item.label}
-          </span>
-        )
+        return <span key={item.key} className="swiss-rail__link" aria-disabled="true"><Icon />{item.label}</span>
       }
-
-      const current = item.key === activeKey
       return (
         <NavLink
           key={item.key}
+          onClick={() => setOpen(false)}
           to={item.to}
-          end={item.to === '/'}
-          className={({ isActive }) => {
-            const active = controlled ? current : isActive
-            return active ? 'swiss-rail__link is-active' : 'swiss-rail__link'
-          }}
-          {...(controlled ? { 'aria-current': current ? ('page' as const) : undefined } : {})}
+          className={({ isActive }) =>
+            (activeKey === undefined ? isActive : activeKey === item.key) ? 'swiss-rail__link is-active' : 'swiss-rail__link'
+          }
         >
+          <Icon aria-hidden="true" />
           {item.label}
         </NavLink>
       )
@@ -70,41 +59,20 @@ export default function SwissRail({ items, groups, activeKey }: SwissRailProps) 
 
   return (
     <nav className="swiss-rail-nav" aria-label="主导航">
-      {items ? renderItems(items) : null}
-
-      {groups?.map((group) => {
-        const expanded = Boolean(openGroups[group.key])
-        const hasActive = group.items.some((item) => item.key === activeKey)
-        const panelId = `swiss-rail-group-${group.key}`
-
-        return (
+      <button className="swiss-rail__mobile-toggle" type="button" aria-expanded={open}
+        aria-controls="carbon-navigation" onClick={() => setOpen(!open)}>
+        <BarsOutlined /> 模块导航
+        <span>{open ? '收起' : '展开'}</span>
+      </button>
+      <div id="carbon-navigation" className="swiss-rail__navigation-items" data-open={open}>
+        {items && renderItems(items)}
+        {groups?.map((group) => (
           <div className="swiss-rail__group" key={group.key}>
-            <button
-              type="button"
-              className={
-                hasActive
-                  ? 'swiss-rail__group-toggle has-active'
-                  : 'swiss-rail__group-toggle'
-              }
-              aria-expanded={expanded}
-              aria-controls={panelId}
-              onClick={() => toggleGroup(group.key)}
-            >
-              <span className="swiss-rail__group-label">{group.label}</span>
-              <span className="swiss-rail__group-caret" aria-hidden="true">
-                {expanded ? '−' : '+'}
-              </span>
-            </button>
-            <div
-              id={panelId}
-              className="swiss-rail__group-items"
-              hidden={!expanded}
-            >
-              {renderItems(group.items)}
-            </div>
+            <div className="swiss-rail__group-label">{group.label}</div>
+            {renderItems(group.items)}
           </div>
-        )
-      })}
+        ))}
+      </div>
     </nav>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { productsApi } from '../../../api'
+import type { BomImportResult } from '../../../api/types'
 import { SwissButton, SwissDrawer, SwissField, SwissInput } from '../../../components/swiss'
 import { errorMessage } from '../labels'
 import './BomImportDrawer.css'
@@ -37,6 +38,8 @@ export default function BomImportDrawer({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<BomImportResult | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -45,6 +48,8 @@ export default function BomImportDrawer({
     setFieldErrors({})
     setSubmitError(null)
     setSubmitting(false)
+    setFile(null)
+    setPreview(null)
   }, [open])
 
   function updateRow(key: number, patch: Partial<BomRow>) {
@@ -66,6 +71,21 @@ export default function BomImportDrawer({
 
   async function handleSubmit() {
     if (submitting) return
+
+    if (file) {
+      setSubmitting(true)
+      setSubmitError(null)
+      try {
+        const result = await productsApi.importBomFile(productId, file, !preview)
+        if (preview) onImported(result.imported)
+        else setPreview(result)
+      } catch (error) {
+        setSubmitError(errorMessage(error))
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
 
     const effectiveRows = rows.filter(
       (row) =>
@@ -133,7 +153,7 @@ export default function BomImportDrawer({
             取消
           </SwissButton>
           <SwissButton type="submit" form="bom-import-form" loading={submitting}>
-            导入 BOM
+            {file ? preview ? "确认导入" : "校验文件" : "导入 BOM"}
           </SwissButton>
         </>
       }
@@ -158,9 +178,26 @@ export default function BomImportDrawer({
           </div>
         ) : null}
 
-        <p className="bom-form__note">
-          物料金额单位与产品核算口径一致（元）。相同物料编号重复导入时后端会跳过。
-        </p>
+        <SwissField label="从 CSV 或 Excel 导入" htmlFor="bom-file">
+          <SwissInput key={String(open)} id="bom-file" type="file" accept=".csv,.xlsx" disabled={submitting}
+            onChange={(event) => {
+              setFile(event.target.files?.[0] ?? null)
+              setPreview(null)
+              setSubmitError(null)
+            }} />
+        </SwissField>
+        <p className="bom-form__note"><a href="/bom-template.csv" download>下载 BOM 模板</a> · 最多 10,000 行，5 MB。
+          组件路径用 / 分隔，金额填叶级物料未税人民币金额。</p>
+        {preview && <p role="status">校验 {preview.total_rows} 行，可以新增 {preview.ready} 行，
+          {preview.skipped} 行完全相同将跳过。</p>}
+        {file && <SwissButton variant="ghost" disabled={submitting} onClick={() => {
+          setFile(null)
+          setPreview(null)
+          setSubmitError(null)
+          const field = document.getElementById('bom-file')
+          if (field instanceof HTMLInputElement) field.value = ''
+        }}>清除文件，改为逐行录入</SwissButton>}
+        {!file && <>
 
         <div className="bom-form__rows">
           {rows.map((row) => (
@@ -240,6 +277,7 @@ export default function BomImportDrawer({
         <SwissButton variant="ghost" disabled={submitting} onClick={addRow}>
           + 添加一行
         </SwissButton>
+        </>}
       </form>
     </SwissDrawer>
   )

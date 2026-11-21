@@ -29,10 +29,13 @@ function supplierName(
 export default function ReductionPlanTable({
   plans,
   suppliers,
+  onUpdate,
 }: {
   plans: ReductionPlanRecord[]
   suppliers: SupplierRecord[]
+  onUpdate?: (plan: ReductionPlanRecord) => void
 }) {
+  const columns = onUpdate ? [...COLUMNS, { key: 'update', title: '操作' }] : COLUMNS
   const rows = plans.map((plan) => {
     const percent = Math.min(Math.max(plan.progress * 100, 0), 100)
     return {
@@ -50,17 +53,18 @@ export default function ReductionPlanTable({
         </div>
       ),
       status: (
-        <StatusText tone={planStatusTone(plan.status)}>
-          {planStatusLabel(plan.status)}
+        <StatusText tone={planStatusTone(plan.overdue ? 'overdue' : plan.status)}>
+          {planStatusLabel(plan.overdue ? 'overdue' : plan.status)}
         </StatusText>
       ),
       deadline: plan.deadline ?? '—',
+      update: onUpdate ? <button className="sc-progress-edit" type="button" onClick={() => onUpdate(plan)}>更新进度</button> : null,
     }
   })
 
   return (
     <SwissTable
-      columns={COLUMNS}
+      columns={columns}
       rows={rows}
       rowKey={(row) => String(row._key)}
       empty="暂无减排计划"

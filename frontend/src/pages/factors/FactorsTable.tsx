@@ -51,7 +51,7 @@ export default function FactorsTable({ factors, emptyText }: FactorsTableProps) 
               : 'factors-caliber factors-caliber--official'
           }
         >
-          {caliberLabel(factor.is_demo)}
+          {factor.version.startsWith('research-') ? '研究推导（CO₂）' : caliberLabel(factor.is_demo)}
         </span>
       ),
       uncertainty: (

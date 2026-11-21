@@ -1,5 +1,7 @@
 import type {
   CompanyDetail,
+  DashboardBudget,
+  DashboardProduction,
   DashboardDrilldown,
   DashboardRing,
   DashboardSankey,
@@ -14,4 +16,6 @@ export type DashboardData = {
   sankey: DashboardSankey
   trend: DashboardTrend
   drilldown: DashboardDrilldown
+  budget: DashboardBudget
+  production: DashboardProduction
 }

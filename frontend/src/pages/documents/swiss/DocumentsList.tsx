@@ -40,6 +40,8 @@ function matchesFilter(doc: SourceDocument, filter: Filter): boolean {
 }
 
 type DocumentsListProps = {
+  canWrite: boolean
+  initialFilter: Filter
   documents: SourceDocument[]
   queue: ReviewQueueItem[]
   loading: boolean
@@ -52,6 +54,8 @@ type DocumentsListProps = {
 
 export default function DocumentsList({
   documents,
+  canWrite,
+  initialFilter,
   queue,
   loading,
   error,
@@ -60,7 +64,7 @@ export default function DocumentsList({
   onParse,
   onManual,
 }: DocumentsListProps) {
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useState<Filter>(initialFilter)
 
   const queueReasons = new Map(queue.map((item) => [item.id, item.reasons]))
   const rows = documents.filter((doc) => matchesFilter(doc, filter))
@@ -146,7 +150,7 @@ export default function DocumentsList({
                 <span className="doc-action">
                   {correcting ? (
                     <span className="doc-action-muted">识别中…</span>
-                  ) : doc.parse_status === 'uploaded' ? (
+                  ) : doc.parse_status === 'uploaded' && canWrite ? (
                     <button
                       type="button"
                       className="doc-action-link"
@@ -154,7 +158,7 @@ export default function DocumentsList({
                     >
                       解析
                     </button>
-                  ) : doc.parse_status === 'failed' ? (
+                  ) : doc.parse_status === 'failed' && canWrite ? (
                     <span className="doc-action-pair">
                       <button
                         type="button"

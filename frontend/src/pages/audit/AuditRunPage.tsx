@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { auditApi } from '../../api'
 import type {
   Attestation,
@@ -23,6 +23,8 @@ type ViewStatus = 'loading' | 'notFound' | 'error' | 'ready'
 
 /** 核算穿透与存证：运行摘要、因子/记录/单据/日志，以及哈希存证。 */
 export default function AuditRunPage() {
+  const [search, setSearch] = useSearchParams()
+  const record = search.get('record')
   const { runId } = useParams<{ runId: string }>()
   const [trace, setTrace] = useState<AuditTrace | null>(null)
   const [attestation, setAttestation] = useState<AttestationQuery | null>(null)
@@ -151,6 +153,16 @@ export default function AuditRunPage() {
                     {trace.algorithm_version || EMPTY_VALUE}
                   </dd>
                 </div>
+                {trace.lineage && (
+                  <div>
+                    <dt>核算归档</dt>
+                    <dd>
+                      {trace.lineage.inputs || trace.lineage.results
+                        ? `${trace.lineage.inputs} 条输入 · ${trace.lineage.results} 条结果`
+                        : '本次无已归档分录，可查阅已保存快照'}
+                    </dd>
+                  </div>
+                )}
               </dl>
             </div>
             <div className="audit-formula">
@@ -161,7 +173,7 @@ export default function AuditRunPage() {
             </div>
           </SwissSection>
 
-          <TraceSections trace={trace} />
+          <TraceSections trace={trace} selectedRecord={record} onReset={() => setSearch({})} />
 
           <SwissSection kicker="Attestation" title="哈希存证">
             <AttestationPanel

@@ -68,13 +68,7 @@ export function actorText(actorUserId: number | null | undefined): string {
  */
 export function sanitizeOrigin(origin: string | null | undefined): string {
   if (!origin) return EMPTY_VALUE
-  const cleaned = origin
-    .replace(/非审计/g, '')
-    .replace(/演示/g, '内置')
-    .replace(/模拟/g, '内置')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-  return cleaned || '项目内置因子库'
+  return origin.trim() || '未提供来源'
 }
 
 /** 记录清单的“活动量 / 金额”列：活动量优先，否则金额 */

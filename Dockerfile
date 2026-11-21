@@ -37,6 +37,8 @@ COPY algorithm_pkg ./algorithm_pkg
 COPY app ./app
 COPY data ./data
 COPY run.py .
+COPY migrations ./migrations
+COPY alembic.ini .
 COPY .env.example ./.env.example
 
 # 前端构建产物：后端 / 根路径直接托管（SPA 回退内置于 app/main.py）
@@ -47,4 +49,4 @@ RUN mkdir -p /app/storage /app/models_cache
 EXPOSE 8000
 
 # 启动前先建库种子（幂等），再启动服务
-CMD ["sh", "-c", "python -m app.seed && python run.py"]
+CMD ["sh", "-c", "python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"]

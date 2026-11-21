@@ -1,126 +1,69 @@
-# ============================================================
-# 碳速算平台 · 生产部署（阿里云 2核2G，Docker Compose）
-# 用法：docker compose -f docker-compose.prod.yml up -d --build
-# 前置：项目根 .env（deploy/deploy.sh 自动生成：DOMAIN/SECRET_KEY/DATA_ENC_KEY/
-#       FIRST_ADMIN_PASSWORD/POSTGRES_PASSWORD），域名已解析到服务器。
-# 对外仅开放 80/443（Caddy）；db/redis/backend 仅绑 127.0.0.1，不暴露公网。
-# 内存规划（共 2G）：backend(懒加载模型+swap) + db(64MB shared_buffers) +
-#                   redis(64MB 上限) + caddy(~60MB) + backup(定时短暂运行)。
-# 监控栈（prometheus/alertmanager/grafana）不适合 2G 机器，未包含；如需观察
-# 指标可在本机经 SSH 隧道访问 127.0.0.1:8000/metrics。
-# ============================================================
+name: carbon-platform
 services:
   db:
-    image: postgres:18
-    container_name: carbonspeed-db
+    image: adc-clinic-postgres:20261111
     environment:
-      POSTGRES_USER: carbonspeed
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: carbonspeed
-      TZ: Asia/Shanghai
-    ports:
-      - "127.0.0.1:5433:5432"
-    command: >
-      postgres -c shared_buffers=64MB -c effective_cache_size=128MB
-      -c max_connections=50 -c work_mem=2MB -c maintenance_work_mem=32MB
+      POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      default:
+        aliases: [carbonspeed-db]
+    command: [postgres, -c, shared_buffers=32MB, -c, max_connections=40]
     volumes:
-      - carbonspeed-db-data:/var/lib/postgresql
+      - database:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U carbonspeed"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      test: [CMD-SHELL, 'pg_isready -U carbonspeed -d carbonspeed']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 192m
     restart: unless-stopped
-    mem_limit: 256m
-
   redis:
     image: redis:7-alpine
-    container_name: carbonspeed-redis
-    command: >
-      redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
-      --save "" --appendonly no
-    ports:
-      - "127.0.0.1:6379:6379"
-    restart: unless-stopped
-    mem_limit: 128m
-
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: carbonspeed-backend
-    environment:
-      DATABASE_URL: postgresql+psycopg2://carbonspeed:${POSTGRES_PASSWORD}@db:5432/carbonspeed
-      SECRET_KEY: ${SECRET_KEY}
-      DATA_ENC_KEY: ${DATA_ENC_KEY}
-      FIRST_ADMIN_PASSWORD: ${FIRST_ADMIN_PASSWORD:-admin123}
-      REDIS_URL: redis://redis:6379/0
-      RATE_LIMIT_BACKEND: redis
-      HF_ENDPOINT: https://hf-mirror.com
-      MODELS_CACHE_DIR: /app/models_cache
-      DOCS_ENABLED: "false"
-      SER_MODEL: ""
-      LLM_API_BASE: ${LLM_API_BASE:-}
-      LLM_API_KEY: ${LLM_API_KEY:-}
-      # 2 核机器：限制数值计算线程，避免 torch/OpenBLAS 线程争抢
-      OMP_NUM_THREADS: "1"
-      MKL_NUM_THREADS: "1"
-      TZ: Asia/Shanghai
-    ports:
-      - "127.0.0.1:8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
-      interval: 15s
-      timeout: 5s
-      retries: 6
-      start_period: 90s
-    volumes:
-      - carbonspeed-models:/app/models_cache
-      - carbonspeed-storage:/app/storage
-    restart: unless-stopped
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: carbonspeed-caddy
-    environment:
-      DOMAIN: ${DOMAIN}
-      TZ: Asia/Shanghai
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - carbonspeed-caddy-data:/data
-      - carbonspeed-caddy-config:/config
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
+    networks:
+      default:
+        aliases: [carbonspeed-redis]
+    command: [redis-server, --maxmemory, 32mb, --maxmemory-policy, allkeys-lru, --save, '']
     mem_limit: 64m
-
-  backup:
-    image: postgres:18-alpine
-    container_name: carbonspeed-backup
+    restart: unless-stopped
+  backend:
+    image: carbonspeed-backend:20261118-final
+    env_file: ${CARBON_RUNTIME_ENV_FILE:-.env}
     environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      TZ: Asia/Shanghai
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@carbonspeed-db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://carbonspeed-redis:6379/0
     volumes:
-      - ./deploy/backup.sh:/backup.sh:ro
-      - ./backups:/backups
-    entrypoint: ["sh", "/backup.sh"]
+      - storage:/app/storage
+      - models:/app/models_cache
+    ports:
+      - '127.0.0.1:18080:8000'
+    networks:
+      default:
+      edge:
+        aliases: [carbonspeed-api]
     depends_on:
       db:
         condition: service_healthy
+    mem_limit: 900m
+    cpus: 1.5
+    pids_limit: 256
+    init: true
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=5)"]
+      interval: 30s
+      timeout: 8s
+      start_period: 60s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
     restart: unless-stopped
-    mem_limit: 96m
-
+networks:
+  edge:
+    external: true
+    name: adc-clinic_default
 volumes:
-  carbonspeed-db-data:
-  carbonspeed-models:
-  carbonspeed-storage:
-  carbonspeed-caddy-data:
-  carbonspeed-caddy-config:
+  database:
+  storage:
+  models:

@@ -7,6 +7,7 @@ POMDP 引擎使用内置确定性勾稽规则（离线可用），配置后自�
 from __future__ import annotations
 
 import json
+import math
 import time
 
 import httpx
@@ -37,9 +38,9 @@ def check_llm() -> dict:
                 result = {"enabled": True, "valid": True, "message": f"LLM 可用（{settings.LLM_MODEL}）"}
             else:
                 result = {"enabled": True, "valid": False,
-                          "message": f"LLM 校验失败（HTTP {resp.status_code}）：{resp.text[:160]}"}
+                          "message": f"LLM 校验失败（HTTP {resp.status_code}）；请管理员检查密钥、余额或模型配置"}
         except Exception as exc:  # noqa: BLE001
-            result = {"enabled": True, "valid": False, "message": f"LLM 连接失败：{exc}"}
+            result = {"enabled": True, "valid": False, "message": f"LLM 连接失败（{type(exc).__name__}）；请检查服务端网络"}
     _check_cache.update(at=now, result=result)
     return result
 
@@ -77,10 +78,14 @@ def chat(messages: list[dict], temperature: float = 0.0, max_tokens: int = 800) 
 
 def llm_correct_fields(fields: dict, conflicts: list[dict]) -> dict | None:
     """请 LLM 依据财务勾稽规则对冲突字段给出纠偏意见，返回 {field: 建议值}。"""
+    allowed = {"quantity", "unit_price", "tax_exclusive_amount", "amount", "tax_amount", "total_amount", "tax_rate"}
+    # 仅发送财务勾稽所需数值，不发送企业、税号、联系人或单据全文。
+    numeric = {k: v for k, v in fields.items() if k in allowed}
+    safe_conflicts = [{k: v for k, v in c.items() if k in ("field", "rule", "expected", "actual", "type")} for c in conflicts]
     prompt = (
         "你是资深财务审计专家。以下票据识别字段存在财务勾稽冲突：\n"
-        f"字段：{json.dumps(fields, ensure_ascii=False)}\n"
-        f"冲突：{json.dumps(conflicts, ensure_ascii=False)}\n"
+        f"字段：{json.dumps(numeric, ensure_ascii=False)}\n"
+        f"冲突：{json.dumps(safe_conflicts, ensure_ascii=False)}\n"
         "勾稽规则：数量×单价=不含税金额；不含税金额+税额=价税合计；不含税金额×税率=税额。\n"
         "请输出 JSON：{\"corrections\": {\"字段名\": 修正后的数值}}，仅纠正置信度低的字段。"
     )
@@ -98,7 +103,12 @@ def llm_correct_fields(fields: dict, conflicts: list[dict]) -> dict | None:
         end = text.rfind("}")
         if start < 0 or end < 0:
             return None
-        return json.loads(text[start : end + 1]).get("corrections")
+        proposals = json.loads(text[start : end + 1]).get("corrections")
+        if not isinstance(proposals, dict):
+            return None
+        return {k: float(v) for k, v in proposals.items()
+                if k in allowed and k in fields and isinstance(v, (int, float))
+                and not isinstance(v, bool) and math.isfinite(v) and v >= 0}
     except Exception:  # noqa: BLE001
         return None
 

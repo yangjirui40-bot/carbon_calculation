@@ -1,3 +1,6 @@
+import { InputNumber, Modal } from 'antd'
+import { supplyChainApi } from '../../api'
+import type { ReductionPlanRecord } from '../../api/types'
 import { useMemo, useState } from 'react'
 import {
   SwissButton,
@@ -34,6 +37,26 @@ export default function QuotasPage() {
   const [activeTab, setActiveTab] = useState<QuotaTab>('quotas')
   const [drawer, setDrawer] = useState<OpenDrawer>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const [editing, setEditing] = useState<ReductionPlanRecord | null>(null)
+  const [percent, setPercent] = useState<number | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  async function saveProgress() {
+    if (!companyId || !editing || percent === null || saving || percent < 0 || percent > 100) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      await supplyChainApi.updateReductionProgress(companyId, editing.plan_id, percent / 100)
+      setEditing(null)
+      handleCreated('减排计划进度已更新')
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : '无法更新进度')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const planIds = useMemo(() => plans.map((plan) => plan.plan_id), [plans])
 
@@ -171,13 +194,26 @@ export default function QuotasPage() {
                   }
                 />
               ) : (
-                <ReductionPlanTable plans={plans} suppliers={suppliers} />
+                <ReductionPlanTable plans={plans} suppliers={suppliers} onUpdate={scope.canWrite ? (plan) => {
+                  setEditing(plan)
+                  setPercent(Math.round(plan.progress * 1000) / 10)
+                  setSaveError('')
+                } : undefined} />
               )}
             </SwissSection>
           )}
         </>
       )}
 
+      <Modal title="更新减排计划进度" open={editing !== null} onCancel={() => { if (!saving) setEditing(null) }}
+        onOk={() => void saveProgress()} confirmLoading={saving} okText="保存" cancelText="取消"
+        okButtonProps={{ disabled: percent === null || percent < 0 || percent > 100 }}>
+        <p>{editing?.title}</p>
+        <label htmlFor="reduction-progress-percent">执行进度（%）</label>
+        <InputNumber id="reduction-progress-percent" min={0} max={100} precision={1} value={percent}
+          disabled={saving} onChange={setPercent} style={{ width: '100%', marginTop: 5 }} />
+        {saveError && <p role="alert">{saveError}</p>}
+      </Modal>
       <QuotaCreateDrawer
         open={drawer === 'quota'}
         companyId={companyId}

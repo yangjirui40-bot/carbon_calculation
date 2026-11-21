@@ -175,7 +175,7 @@ export default function TrajectoryTab({ companyId }: TrajectoryTabProps) {
         title="BAU 与情景干预"
         extra={
           <span>
-            历史 4 期 + 预测 6 期 · {data.interventions.length} 个情景
+            历史 {data.historical_count} 期 + 预测 {data.forecast_count} 期 · {data.interventions.length} 个情景
           </span>
         }
       >

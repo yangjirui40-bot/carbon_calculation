@@ -15,7 +15,7 @@ export class ApiRequestError extends Error {
 }
 
 /** 后端地址只取 origin；/api/v1 由各模块显式写在路径里，/healthz 例外 */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 /** 与 T4 认证模块约定的会话键，值为 { token, user } */
 const SESSION_STORAGE_KEY = 'carbonspeed.session'

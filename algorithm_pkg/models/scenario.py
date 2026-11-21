@@ -44,7 +44,7 @@ def run_scenario(
         if record.get("review_status") != "confirmed":
             continue
         scope = record.get("scope")
-        if scope == "scope2":
+        if scope == "scope2" and record.get("category") == "electricity":
             old = float(record["quantity"])
             new = old * (1 - e_rate)
             record["quantity"] = new
@@ -56,7 +56,9 @@ def run_scenario(
                     "after": round(new, 8),
                     "unit": record.get("unit"),
                 })
-        elif scope == "scope3":
+        elif scope == "scope3" and record.get("category") in {
+            "electronic_components", "pcb_materials", "packaging_materials", "scope3_01",
+        } and record.get("amount") is not None and not record.get("unit"):
             old = float(record["amount"])
             new = old * (1 - p_rate)
             record["amount"] = new
@@ -91,10 +93,10 @@ def run_scenario(
         "changed_records": changed_records,
         "items": scenario["items"],
         "factor_versions": scenario["factor_versions"],
-        "is_demo": True,
+        "is_demo": scenario["is_demo"],
         "warnings": [
-            "情景结果基于模拟业务记录和演示排放因子。",
-            "节电比例仅调整 Scope 2 用电量；采购减少比例仅调整已确认的 Scope 3 采购金额。",
+            "情景基于所选活动记录与因子版本，用于假设比较。",
+            "节电比例仅调整 Scope 2 用电量；采购减少比例仅调整已确认且按金额计量的采购项目。",
             "Scope 1 不随上述情景变化；产品 PCF 不自动并入企业总账。"
         ],
     }
@@ -121,5 +123,5 @@ def compare_scenarios(results: list[dict]) -> dict:
             }
             for x in results
         ],
-        "is_demo": True,
+        "is_demo": scenario["is_demo"],
     }

@@ -35,6 +35,12 @@ def create_subscription(payload: SubscribeRequest, db: Session = Depends(get_db)
     check_company_access(db, user, payload.company_id, write=True)
     if payload.plan_code != "free" and user.role != "admin":
         raise HTTPException(status_code=403, detail="仅管理员可开通付费套餐（对接支付后开放自助订阅）")
+    if user.role != "admin":
+        from ..services.inventory import lock_company
+        lock_company(db, payload.company_id)
+        current = db.query(Subscription).filter_by(company_id=payload.company_id).first()
+        if current and current.plan_code != "free":
+            raise HTTPException(409, "企业套餐变更请联系平台管理员")
     sub = subscribe(db, payload.company_id, payload.plan_code)
     return {"company_id": sub.company_id, "plan_code": sub.plan_code, "status": sub.status,
             "start_date": sub.start_date.isoformat(), "end_date": sub.end_date.isoformat()}
@@ -59,3 +65,15 @@ def get_subscription(company_id: int, db: Session = Depends(get_db), user: User 
         "quota_documents": plan.quota_documents if plan else None,
         "remaining_calculations": max(0, (plan.quota_calculations - sub.usage_calculations)) if plan else None,
     }
+
+
+@router.get("/company/{company_id}/usage-events")
+def usage_events(company_id: int, before: int | None = None, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    from ..deps import check_company_access
+    from ..models.enterprise_controls import UsageEvent
+    check_company_access(db, user, company_id)
+    query = db.query(UsageEvent).filter_by(company_id=company_id)
+    if before is not None:
+        query = query.filter(UsageEvent.id < before)
+    return [{"id": row.id, "kind": row.usage_type, "quantity": row.quantity, "at": row.occurred_at}
+            for row in query.order_by(UsageEvent.id.desc()).limit(100)]

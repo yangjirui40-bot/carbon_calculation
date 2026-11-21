@@ -6,12 +6,14 @@ import { clearSession, readSession } from './guards/RequireAuth'
 
 const SUPPLIER_NAV = [
   { key: 'supplier', label: '门户首页', to: '/supplier' },
+  { key: 'supplier-disclosures', label: '定向报送', to: '/supplier/disclosures' },
   { key: 'supplier-report', label: '碳数据填报', to: '/supplier/report' },
   { key: 'supplier-submissions', label: '上报历史', to: '/supplier/submissions' },
 ]
 
 /** 供应商门户内部按完整路径高亮，避免三个页面共用 supplier 首段 */
 function getSupplierActiveKey(pathname: string): string {
+  if (pathname.startsWith('/supplier/disclosures')) return 'supplier-disclosures'
   if (pathname.startsWith('/supplier/report')) return 'supplier-report'
   if (pathname.startsWith('/supplier/submissions')) return 'supplier-submissions'
   return 'supplier'

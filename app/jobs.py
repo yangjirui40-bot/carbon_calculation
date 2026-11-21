@@ -130,7 +130,10 @@ def _worker_loop() -> None:
                 _finish(job.id, "failed", error=f"未注册的任务类型：{job.job_type}")
                 continue
             try:
-                result = handler(job.payload or {})
+                payload = job.payload or {}
+                if job.job_type == "document_parse":
+                    payload = {**payload, "job_id": job.id, "attempt": job.attempts}
+                result = handler(payload)
                 _finish(job.id, "success", result=result)
             except Exception as exc:  # noqa: BLE001
                 if job.attempts >= job.max_attempts:

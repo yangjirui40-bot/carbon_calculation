@@ -75,3 +75,9 @@
     transform: rotate(360deg);
   }
 }
+
+.swiss-button { border-radius: 7px; font-size: 13px; }
+.swiss-button--ghost { background: var(--paper-raised); }
+.swiss-button--primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+@media (pointer: coarse) { .swiss-button { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .swiss-button { transition: none; } }

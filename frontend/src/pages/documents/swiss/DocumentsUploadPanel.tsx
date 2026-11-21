@@ -1,197 +1,135 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { CameraOutlined, InboxOutlined, TableOutlined } from '@ant-design/icons'
 import { documentsApi } from '../../../api'
 import { ApiRequestError } from '../../../api/client'
-import type { BackendParseStatus, SourceDocument } from '../../../api/types'
-import LineIcon from '../../../components/common/LineIcon'
 import { DOC_TYPE_OPTIONS, type DocTypeOption } from '../meta'
 import './DocumentsUploadPanel.css'
 
 const MAX_SIZE = 20 * 1024 * 1024
+const MAX_FILES = 50
 const ACCEPT = '.jpg,.jpeg,.png,.pdf'
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 
-type Phase = 'idle' | 'uploading' | 'parsing'
-
-type UploadResult = {
-  fileName: string
-  status: BackendParseStatus
-  confidence: number | null
-  duplicateHint: string | null
+type Item = {
+  name: string
+  state: '待上传' | '上传中' | '识别中' | '待复核' | '已上传' | '异常' | '疑似重复'
+  id?: number
+  note?: string
 }
 
-type DocumentsUploadPanelProps = {
+export default function DocumentsUploadPanel({ companyId, onManual, onCompleted }: {
   companyId: number | null
   onManual: () => void
-  onUploaded: (doc: SourceDocument) => void
-}
-
-/** 上传 → 同步解析（wait=true）→ 刷新列表；解析失败可重试或转人工 */
-export default function DocumentsUploadPanel({
-  companyId,
-  onManual,
-  onUploaded,
-}: DocumentsUploadPanelProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [docType, setDocType] = useState<DocTypeOption>('invoice')
-  const [phase, setPhase] = useState<Phase>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<UploadResult | null>(null)
+  onCompleted: () => void
+}) {
+  const picker = useRef<HTMLInputElement>(null)
+  const camera = useRef<HTMLInputElement>(null)
+  const pending = useRef(false)
+  const [docType, setType] = useState<DocTypeOption>('invoice')
+  const [items, setItems] = useState<Item[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
-
-  const busy = phase !== 'idle'
   const disabled = companyId === null || busy
 
-  async function handleFile(file: File) {
-    if (companyId === null) {
-      setError('请先选择企业')
+  async function process(files: File[]) {
+    if (companyId === null || pending.current || files.length === 0) return
+    setError('')
+    if (files.length > MAX_FILES) {
+      setError(`每批最多 ${MAX_FILES} 份，请分批选择。`)
       return
     }
-    if (file.size > MAX_SIZE) {
-      setError('文件超过 20 MB，请压缩后重试')
-      return
-    }
-    const extOk = /\.(jpe?g|png|pdf)$/i.test(file.name)
-    if (!ALLOWED_TYPES.includes(file.type) && !extOk) {
-      setError('仅支持 jpg / png / pdf')
-      return
+    pending.current = true
+    setBusy(true)
+    setItems(files.map((file) => ({ name: file.name, state: '待上传' })))
+
+    function update(index: number, patch: Partial<Item>) {
+      setItems((previous) => previous.map((item, i) => i === index ? { ...item, ...patch } : item))
     }
 
-    setError(null)
-    setResult(null)
-    setPhase('uploading')
     try {
-      const uploaded = await documentsApi.uploadDocument(file, companyId, docType)
-      setPhase('parsing')
-      const parsed = await documentsApi.parseDocument(uploaded.id, true)
-      const doc: SourceDocument =
-        'parse_status' in parsed ? (parsed as SourceDocument) : uploaded
-      setResult({
-        fileName: uploaded.file_name,
-        status: doc.parse_status,
-        confidence: doc.overall_confidence,
-        duplicateHint: uploaded.duplicate_hint,
-      })
-      onUploaded(doc)
-    } catch (err) {
-      setError(
-        err instanceof ApiRequestError ? err.message : '上传或解析失败，请稍后重试',
-      )
+      for (const [index, file] of files.entries()) {
+        if (file.size === 0 || file.size > MAX_SIZE || !/\.(jpe?g|png|pdf)$/i.test(file.name)) {
+          update(index, { state: '异常', note: ' 请选择不超过 20 MB 的非空 JPG、PNG 或 PDF。' })
+          continue
+        }
+        let id: number | undefined
+        try {
+          update(index, { state: '上传中' })
+          const uploaded = await documentsApi.uploadDocument(file, companyId, docType)
+          id = uploaded.id
+          if (uploaded.duplicate_hint) {
+            update(index, { id, state: '疑似重复', note: uploaded.duplicate_hint + '，当前单据保留在待解析列表。' })
+            continue
+          }
+          update(index, { id, state: '识别中' })
+          await documentsApi.parseDocument(id)
+          update(index, { state: '已上传', note: '已进入识别队列，可在单据列表查看进度。' })
+        } catch (err) {
+          const message = err instanceof ApiRequestError ? err.message : '传输中断，请查看单据状态。'
+          update(index, { id, state: '异常', note: id ? `已保存原件。 ${message}` : message })
+        }
+      }
     } finally {
-      setPhase('idle')
-      if (inputRef.current) inputRef.current.value = ''
+      pending.current = false
+      setBusy(false)
+      onCompleted()
     }
   }
 
-  function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (file) void handleFile(file)
+  function handleInput(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    void process(files)
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault()
     setDragging(false)
-    if (disabled) return
-    const file = event.dataTransfer.files?.[0]
-    if (file) void handleFile(file)
+    if (!disabled) void process(Array.from(event.dataTransfer.files))
   }
-
-  const buttonText =
-    phase === 'uploading' ? '上传中…' : phase === 'parsing' ? '识别中…' : '选择文件'
 
   return (
     <section className="doc-upload-panel">
-      <div
-        className={dragging ? 'doc-upload-box is-dragging' : 'doc-upload-box'}
-        onDragOver={(event) => {
-          event.preventDefault()
-          if (!disabled) setDragging(true)
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={handleDrop}
-      >
-        <div>
-          <div className="doc-upload-icon">
-            <LineIcon name="upload" size={22} />
-          </div>
-          <h2>把票据放进来</h2>
-          <p>
-            拖拽图片或 PDF 到这里，系统会识别票面字段并做勾稽纠偏；识别失败时可以转人工录入。
-          </p>
+      <div className={dragging ? 'doc-upload-box is-dragging' : 'doc-upload-box'}
+        onDragOver={(event) => { event.preventDefault(); if (!disabled) setDragging(true) }}
+        onDragLeave={() => setDragging(false)} onDrop={handleDrop}>
+        <div className="doc-upload-icon"><InboxOutlined /></div>
+        <h2>上传原始凭证</h2>
+        <p>拖入票据，或一次选择多份同类型文件。识别后的字段进入复核队列。</p>
+        <div className="doc-type-row" role="group" aria-label="票据类型">
+          {DOC_TYPE_OPTIONS.map((option) => (
+            <button key={option.value} type="button" className={option.value === docType ? 'doc-type-chip is-active' : 'doc-type-chip'}
+              aria-pressed={option.value === docType} disabled={busy} onClick={() => setType(option.value)}>
+              {option.label}
+            </button>
+          ))}
         </div>
-
-        <div>
-          <div className="doc-type-row" role="group" aria-label="票据类型">
-            {DOC_TYPE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={
-                  option.value === docType ? 'doc-type-chip is-active' : 'doc-type-chip'
-                }
-                aria-pressed={option.value === docType}
-                disabled={busy}
-                onClick={() => setDocType(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT}
-            className="doc-file-input"
-            onChange={handleInputChange}
-          />
-          <button
-            type="button"
-            className="doc-btn-primary"
-            disabled={disabled}
-            onClick={() => inputRef.current?.click()}
-          >
-            {buttonText}
-            <LineIcon name="arrow-up-right" size={15} />
+        <input ref={picker} type="file" multiple accept={ACCEPT} className="doc-file-input" onChange={handleInput} />
+        <input ref={camera} type="file" accept="image/jpeg,image/png" capture="environment" className="doc-file-input" onChange={handleInput} />
+        <div className="doc-upload-actions">
+          <button type="button" className="doc-btn-primary" disabled={disabled} onClick={() => picker.current?.click()}>
+            {busy ? '正在处理批次…' : '选择文件'}
           </button>
-          <div className="doc-upload-note">
-            {companyId === null
-              ? '请先选择企业'
-              : 'jpg / png / pdf · ≤ 20 MB · 上传后立即解析'}
-          </div>
+          <button type="button" className="doc-camera" disabled={disabled} onClick={() => camera.current?.click()}>
+            <CameraOutlined /> 拍摄凭证
+          </button>
         </div>
+        <div className="doc-upload-note">{companyId === null ? '请先选择企业' : 'JPG、PNG、PDF · 每份 20 MB 以内 · 每批最多 50 份'}</div>
       </div>
 
-      {result ? (
-        <div className="doc-upload-result">
-          <b>{result.fileName}</b>
-          <span>
-            {result.status === 'parsed' ? '识别完成' : '已上传，待解析'}
-            {result.confidence !== null
-              ? ` · 综合置信度 ${result.confidence.toFixed(2)}`
-              : ''}
-          </span>
-          {result.status === 'parsed' ? (
-            <span className="doc-upload-result-hint">请到右侧列表进入核对</span>
-          ) : null}
-          {result.duplicateHint ? (
-            <span className="doc-upload-result-warn">{result.duplicateHint}</span>
-          ) : null}
-        </div>
-      ) : null}
-
-      {error ? (
-        <div className="doc-upload-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-
-      <button type="button" className="doc-manual" onClick={onManual}>
-        <span>手工录入业务记录</span>
-        <span className="doc-manual-side">
-          <small>不经过 OCR</small>
-          <LineIcon name="plus" size={14} />
-        </span>
-      </button>
+      {error && <div className="doc-upload-error" role="alert">{error}</div>}
+      {items.length > 0 && <section className="doc-batch" aria-label="本批处理结果" aria-live="polite">
+        {items.map((item, index) => (
+          <div className="doc-batch__item" key={index}>
+            <div><b>{item.name}</b><span>{item.state}</span></div>
+            {item.note && <p>{item.note}</p>}
+            {item.state === '待复核' && item.id && <Link to={`/documents/${item.id}/review`}>查看原件并复核 →</Link>}
+          </div>
+        ))}
+      </section>}
+      <Link to="/records" className="doc-manual"><span><TableOutlined /> 导入 Excel / CSV 台账</span><span aria-hidden="true">›</span></Link>
+      <button type="button" className="doc-manual" onClick={onManual} disabled={companyId === null}>手工录入业务记录 <span aria-hidden="true">＋</span></button>
     </section>
   )
 }

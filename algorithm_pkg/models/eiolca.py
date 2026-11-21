@@ -28,7 +28,7 @@ G_DEMO = np.array([0.20, 0.30, 0.08], dtype=float)
 
 def _as_matrix(A):
     arr = np.asarray(A, dtype=float)
-    if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
+    if arr.ndim != 2 or not arr.shape[0] or arr.shape[0] != arr.shape[1]:
         raise EIOLCAError("A 必须是方阵")
     if not np.isfinite(arr).all():
         raise EIOLCAError("A 含有 NaN 或无穷值")
@@ -43,30 +43,28 @@ def validate_system(A, tolerance=1e-10):
     M = np.eye(n) - A
     det = float(np.linalg.det(M))
     cond = float(np.linalg.cond(M))
-    if abs(det) <= tolerance:
+    if n <= 6 and abs(det) <= tolerance:
         raise EIOLCAError("I-A 不可逆或接近奇异")
     if not np.isfinite(cond) or cond > 1e10:
         raise EIOLCAError("I-A 条件数过大，数值不稳定")
 
-    # Hawkins-Simon 条件：I-A 的全部非空主子式均为正。
-    # 对所有非空索引子集逐一计算对应的 principal submatrix。
-    from itertools import combinations
-    principal_minors = {}
-    for k in range(1, n + 1):
-        for idx in combinations(range(n), k):
-            minor_matrix = M[np.ix_(idx, idx)]
-            minor = float(np.linalg.det(minor_matrix))
-            key = "indices_" + "_".join(str(i + 1) for i in idx)
-            principal_minors[key] = minor
-            if minor <= tolerance:
-                raise EIOLCAError(f"Hawkins-Simon 主子式不为正：{key}")
     rho = float(max(abs(np.linalg.eigvals(A))))
     if rho >= 1 - tolerance:
         raise EIOLCAError("A 的谱半径必须小于 1，Leontief 级数不收敛")
+    # For A >= 0, rho(A) < 1 makes I-A a nonsingular M-matrix and
+    # implies positivity of every principal minor. List them only for small teaching models.
+    principal_minors = {}
+    if n <= 6:
+        from itertools import combinations
+        for k in range(1, n + 1):
+            for idx in combinations(range(n), k):
+                key = "indices_" + "_".join(str(i + 1) for i in idx)
+                principal_minors[key] = float(np.linalg.det(M[np.ix_(idx, idx)]))
     return {
         "det_I_minus_A": det,
         "condition_number": cond,
         "spectral_radius_A": rho,
+        "productivity_test": "nonnegative_spectral_radius",
         "leading_principal_minors": principal_minors,
     }
 

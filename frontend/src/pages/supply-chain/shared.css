@@ -336,3 +336,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.sc-risk--unknown { color: var(--muted); }
+.sc-risk--unknown .sc-risk__dot { background: var(--muted); }
+
+.sc-coverage { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 13px 15px; border: 1px solid var(--rule); background: var(--paper-raised); border-radius: 8px; color: var(--muted); }
+.sc-coverage b { color: var(--ink); font-size: 22px; margin-right: 4px; }
+.sc-filters { margin-top: 13px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sc-filters label { display: flex; gap: 4px; align-items: center; }
+.sc-filters select { max-width: 150px; min-height: 34px; padding: 4px; border: 1px solid var(--rule); border-radius: 7px; background: var(--paper-raised); color: var(--ink); font: inherit; }
+.sc-filters > span { color: var(--muted); font-size: 12px; }
+.sc-export-button, .sc-progress-edit { min-height: 34px; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 7px; background: var(--paper-raised); color: var(--accent); font: inherit; cursor: pointer; }
+.sc-export-button:hover, .sc-progress-edit:hover { border-color: var(--accent); }
+@media (max-width: 760px) { .sc-coverage { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

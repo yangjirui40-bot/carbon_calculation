@@ -182,3 +182,11 @@
     padding-top: 0;
   }
 }
+
+.records-template-link { display: inline-flex; align-items: center; min-height: 40px; padding: 0 7px; color: var(--accent); font-size: 13px; }
+
+.records-pager, .records-row-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+.records-pager { margin-top: 14px; flex-wrap: wrap; }
+.records-classification { display: grid; gap: 14px; }
+.records-review-meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; }
+.records-review-meta dd { margin: 0; overflow-wrap: anywhere; }

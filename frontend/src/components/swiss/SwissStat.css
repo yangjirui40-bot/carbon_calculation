@@ -56,3 +56,7 @@
 .swiss-stat--fail .swiss-stat__number {
   color: var(--fail);
 }
+
+.swiss-stat__label { font-size: 12px; letter-spacing: 0; text-transform: none; }
+.swiss-stat__value { flex-wrap: wrap; }
+.swiss-stat__hint { font-size: 12px; }

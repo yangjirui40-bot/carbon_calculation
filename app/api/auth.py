@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user, require_admin
-from ..models import User
+from ..models import User, Company
+from ..config import settings
+import uuid
 from ..schemas import Token, UserCreate, UserOut
 from ..security import create_access_token, hash_password, verify_password
 
@@ -22,6 +24,10 @@ def admin_create_user(payload: UserCreate, db: Session = Depends(get_db),
         raise HTTPException(status_code=400, detail="用户名已存在")
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="邮箱已存在")
+    if payload.role not in ("admin", "enterprise", "auditor", "supplier"):
+        raise HTTPException(status_code=422, detail="无效角色")
+    if payload.company_id is not None and db.get(Company, payload.company_id) is None:
+        raise HTTPException(status_code=422, detail="企业不存在")
     user = User(
         username=payload.username,
         email=payload.email,
@@ -38,6 +44,10 @@ def admin_create_user(payload: UserCreate, db: Session = Depends(get_db),
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register(payload: UserCreate, db: Session = Depends(get_db)):
+    if not settings.SELF_REGISTRATION_ENABLED:
+        raise HTTPException(status_code=403, detail="请联系管理员开通企业账号")
+    if payload.company_id is not None or payload.supplier_id is not None:
+        raise HTTPException(status_code=403, detail="加入现有企业或供应商须由管理员授权")
     if db.query(User).filter(User.username == payload.username).first():
         raise HTTPException(status_code=400, detail="用户名已存在")
     if db.query(User).filter(User.email == payload.email).first():
@@ -46,14 +56,21 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     role = payload.role
     if role != "enterprise":
         raise HTTPException(status_code=403, detail="自助注册仅限企业用户角色")
+    if payload.role not in ("admin", "enterprise", "auditor", "supplier"):
+        raise HTTPException(status_code=422, detail="无效角色")
+    if payload.company_id is not None and db.get(Company, payload.company_id) is None:
+        raise HTTPException(status_code=422, detail="企业不存在")
+    company = Company(code="tenant-" + uuid.uuid4().hex[:20], name=payload.company_name or payload.username + "的企业")
+    db.add(company)
+    db.flush()
     user = User(
-        username=payload.username,
-        email=payload.email,
-        hashed_password=hash_password(payload.password),
-        role=role,
-        company_id=payload.company_id,
+        username=payload.username, email=payload.email,
+        hashed_password=hash_password(payload.password), role=role, company_id=company.id,
     )
     db.add(user)
+    db.flush()
+    from ..models.organization import TenantMember
+    db.add(TenantMember(tenant_id=company.id, account_id=user.id, is_owner=True))
     db.commit()
     db.refresh(user)
     return user

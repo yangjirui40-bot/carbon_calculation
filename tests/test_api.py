@@ -14,6 +14,9 @@ sys.path.insert(0, str(BACKEND))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+if not os.environ.get("DATABASE_URL", "").rsplit("/", 1)[-1].startswith("carbonspeed_test"):
+    raise SystemExit("拒绝重置非测试数据库；请设置独立 carbonspeed_test 数据库的 DATABASE_URL")
+
 from app.database import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.seed import seed  # noqa: E402
@@ -60,7 +63,7 @@ def run_tests(client):
     r = client.post("/api/v1/companies", headers=h, json={"code": "demo-002", "name": "竞争对手测试公司B"})
     check("创建第二家企业", r.status_code == 201, r.text)
     company2 = r.json()["id"]
-    r = client.post("/api/v1/auth/register", json={"username": "userb", "email": "b@x.com",
+    r = client.post("/api/v1/auth/users", headers=h, json={"username": "userb", "email": "b@x.com",
                                                    "password": "userb123", "role": "enterprise", "company_id": company2})
     check("注册企业用户B", r.status_code == 201, r.text)
     h2 = login(client, "userb", "userb123")
@@ -155,7 +158,7 @@ def run_tests(client):
     body = r.json()
     sb = body["data"]["scope_breakdown"]
     check("官方因子 Scope1=104.0（柴油2.60）", abs(sb["scope1"] - 104.0) < 1e-6, str(sb))
-    check("官方因子 Scope2=684.36（全国2022电力0.5703）", abs(sb["scope2"] - 684.36) < 1e-6, str(sb))
+    check("官方因子 Scope2=643.92（全国2022电力0.5366）", abs(sb["scope2"] - 643.92) < 1e-6, str(sb))
     check("Scope3 无官方因子沿用记录因子", abs(sb["scope3"] - demo["scope_breakdown"]["scope3"]) < 1e-6, str(sb))
     r = client.post("/api/v1/calculations/enterprise", headers=h,
                     json={"company_id": company1, "period": "2026-10", "factor_set": "official-2022-hunan"})
@@ -228,7 +231,7 @@ def run_tests(client):
     check("建模说明（OLTP 3NF + OLAP 星型）", r.status_code == 200
           and "OLTP" in schema["modeling"] and "OLAP" in schema["modeling"], str(schema)[:200])
     check("星型维度/事实表齐全",
-          set(schema["modeling"]["OLAP"]["维度表"]) == {"dim_category", "dim_company", "dim_period", "dim_supplier"}
+          set(schema["modeling"]["OLAP"]["维度表"]) == {"dim_category", "dim_company", "dim_org", "dim_period", "dim_supplier"}
           and set(schema["modeling"]["OLAP"]["事实表"]) == {"fact_company_emission", "fact_emission"},
           str(schema["modeling"]["OLAP"]))
     # 驾驶舱汇总与 OLAP 事实表一致（星型查询生效）

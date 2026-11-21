@@ -9,7 +9,10 @@ const QuotasPage = lazy(() => import('../../pages/supply-chain/QuotasPage'))
 const TradesPage = lazy(() => import('../../pages/supply-chain/TradesPage'))
 
 /** 协同：供应链总览、供应商档案、配额与减排计划、配额交易与对账 */
+const DisclosurePage = lazy(() => import('../../pages/disclosures/DisclosurePage'))
+
 export const supplyChainRoutes: RouteObject[] = [
+  { path: 'disclosures', element: <DisclosurePage /> },
   {
     path: 'supply-chain',
     element: <SupplyChainOverviewPage />,

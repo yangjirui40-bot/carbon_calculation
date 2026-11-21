@@ -280,3 +280,50 @@
     border-bottom: 0;
   }
 }
+
+.dash-context { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; padding: 12px 15px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-raised); font-size: 13px; }
+.dash-context label { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 650; }
+.dash-context select { max-width: min(46vw, 350px); min-height: 34px; padding: 5px 7px; border: 1px solid var(--rule); border-radius: 6px; font: inherit; color: var(--ink); background: var(--paper); }
+.dash-context > span { color: var(--muted); overflow-wrap: anywhere; }
+.dash-context > a { margin-left: auto; font-weight: 650; color: var(--accent); }
+.dash-quality { padding: 9px 13px; color: var(--warn); background: var(--paper-raised); border-left: 3px solid var(--warn); font-size: 13px; }
+.dash-kpis { gap: 12px; border: 0; margin-bottom: 18px; }
+.dash-kpi, .dash-kpi + .dash-kpi, .dash-kpi:last-child { padding: 15px 16px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-raised); }
+.dash-kpi:first-child { border-top: 3px solid var(--accent); }
+.dash-kpi:nth-child(2) { border-top: 3px solid var(--s1); }
+.dash-kpi:nth-child(3) { border-top: 3px solid var(--s2); }
+.dash-kpi:nth-child(4) { border-top: 3px solid var(--s3); }
+.dash-overview { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.4fr); align-items: start; gap: 16px; }
+.dash-ring { position: relative; }
+.dash-ring__center { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 11px; }
+.dash-ring__center strong { font-size: 21px; font-weight: 750; color: var(--ink); }
+.dash-scopes button { width: 100%; display: grid; grid-template-columns: 9px 1fr auto; align-items: center; gap: 9px; padding: 9px 4px; border: 0; border-top: 1px solid var(--rule-soft); background: transparent; color: var(--ink); text-align: left; font: inherit; font-size: 12px; cursor: pointer; }
+.dash-scopes button:hover { color: var(--accent); }
+.dash-scopes i { width: 8px; height: 8px; border-radius: 2px; background: var(--s1); }
+.dash-scopes [data-scope=scope2] i { background: var(--s2); }
+.dash-scopes [data-scope=scope3] i { background: var(--s3); }
+.dash-data summary { color: var(--accent); cursor: pointer; font-size: 13px; }
+.dash-data table { margin-top: 8px; }
+@media (max-width: 1050px) { .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 850px) { .dash-overview { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 760px) {
+  .dash-context { align-items: flex-start; flex-direction: column; }
+  .dash-context > a { margin-left: 0; }
+  .dash-kpi:nth-child(odd) { padding-left: 16px; }
+  .dash-kpi .swiss-stat__number { font-size: 22px; overflow-wrap: anywhere; }
+}
+.dash-shortcuts { display:flex;flex-wrap:wrap;gap:14px;margin:0 0 12px;font-size:13px;font-weight:650; }
+.dash-shortcuts a,.dash-flow-link { color:var(--accent); }
+.dash-overview { grid-template-columns:minmax(270px,.8fr) minmax(0,1.55fr);align-items:stretch; }
+.dash-flow-link { border:0;background:none;font:inherit;padding:5px 0;text-align:left;cursor:pointer; }
+.dash-flow-link:hover { text-decoration:underline; }
+.dash-category { display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px; }
+.dash-category select { min-height:34px;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:3px 8px;color:var(--ink);font:inherit; }
+@media(max-width:900px){.dash-overview{grid-template-columns:minmax(0,1fr);}}
+
+.dash-budget-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+.dash-budget-summary div { display: grid; gap: 6px; }
+.dash-budget-summary span { font-size: 0.82rem; }
+.dash-budget-summary b { font-variant-numeric: tabular-nums; font-size: 1.18rem; }
+.dash-budget-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+.dash-budget-form input { width: min(100%, 180px); }

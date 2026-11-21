@@ -1,3 +1,4 @@
+import { ApartmentOutlined, AuditOutlined, BarChartOutlined, FileSearchOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -56,31 +57,27 @@ export default function LoginPage() {
       <div className="auth-split">
         <aside className="auth-brand">
           <div className="auth-brand-top">
-            <span className="auth-brand-mark" aria-hidden="true" />
-            <span className="auth-brand-kicker">Carbon Ledger / Sign in</span>
+            <span className="auth-brand-mark" aria-hidden="true"><ApartmentOutlined /></span>
+            <span className="auth-brand-kicker">企业碳管理平台</span>
           </div>
 
           <div className="auth-brand-main">
             <h1 className="auth-brand-title">碳速算</h1>
             <p className="auth-brand-sub">电子信息制造业碳核算平台</p>
-            <div className="auth-brand-geometry" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </div>
+            <ul className="auth-brand-workflow">
+              <li><FileSearchOutlined /> 原始凭证与业务台账</li>
+              <li><BarChartOutlined /> 企业排放与产品碳足迹</li>
+              <li><AuditOutlined /> 核算审计与报告</li>
+            </ul>
           </div>
 
-          <div className="auth-brand-foot">
-            <span>Scope 1 / 2 / 3</span>
-            <span>Carbon Accounting</span>
-          </div>
+
         </aside>
 
         <main className="auth-panel">
           <div className="auth-form-box">
             <header className="auth-head">
-              <div className="auth-kicker">Account / 01</div>
-              <h2>登录</h2>
+              <h2>登录工作台</h2>
               <p>使用企业账号进入工作台，继续碳核算流程。</p>
             </header>
 
@@ -100,7 +97,6 @@ export default function LoginPage() {
               <div className="auth-field">
                 <label className="auth-label" htmlFor="login-username">
                   <span>用户名</span>
-                  <span className="auth-label-en">Username</span>
                 </label>
                 <input
                   id="login-username"
@@ -115,7 +111,6 @@ export default function LoginPage() {
               <div className="auth-field">
                 <label className="auth-label" htmlFor="login-password">
                   <span>密码</span>
-                  <span className="auth-label-en">Password</span>
                 </label>
                 <div className="auth-password">
                   <input
@@ -156,10 +151,6 @@ export default function LoginPage() {
             </footer>
           </div>
 
-          <div className="auth-panel-foot">
-            <span>碳速算 · Carbon Ledger</span>
-            <span>电子信息制造业碳核算平台</span>
-          </div>
         </main>
       </div>
     </div>

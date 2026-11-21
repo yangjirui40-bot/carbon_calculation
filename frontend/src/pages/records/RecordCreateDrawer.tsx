@@ -1,3 +1,5 @@
+import ClassificationFields, { normalizedClassification } from './ClassificationFields'
+import type { RecordClassification } from '../../api/types'
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { recordsApi } from '../../api'
 import type {
@@ -54,6 +56,7 @@ export default function RecordCreateDrawer({
   onClose,
   onCreated,
 }: RecordCreateDrawerProps) {
+  const [classification, setClassification] = useState<RecordClassification>({})
   const [recordNo, setRecordNo] = useState('')
   const [period, setPeriod] = useState('')
   const [category, setCategory] = useState('')
@@ -70,6 +73,7 @@ export default function RecordCreateDrawer({
 
   useEffect(() => {
     if (!open) return
+    setClassification({})
     setRecordNo('')
     setPeriod('')
     setCategory('')
@@ -97,6 +101,9 @@ export default function RecordCreateDrawer({
     () => (category ? factors.filter((factor) => factor.category === category) : factors),
     [factors, category],
   )
+
+  const selectedFactor = factors.find((item) => item.factor_id === factorId)
+  const spendBasis = selectedFactor ? unitFromFactorUnit(selectedFactor.unit) === 'CNY' : scope === 'scope3'
 
   function applyScope(nextScope: string) {
     setScope(nextScope)
@@ -130,7 +137,7 @@ export default function RecordCreateDrawer({
     const value = event.target.value
     setFactorId(value)
     const factor = factors.find((item) => item.factor_id === value)
-    if (factor && scope !== 'scope3') {
+    if (factor && unitFromFactorUnit(factor.unit) !== 'CNY') {
       // 单位以所选因子的分母为准，避免出现“100 L 电力”这类不一致
       const inferredUnit = unitFromFactorUnit(factor.unit)
       if (inferredUnit) setUnit(inferredUnit)
@@ -144,7 +151,7 @@ export default function RecordCreateDrawer({
     if (!category) errors.category = '请选择类别'
     if (!factorId) errors.factor_id = '请选择排放因子'
 
-    if (scope === 'scope3') {
+    if (spendBasis) {
       if (!isNonNegativeNumber(amount)) errors.amount = '请填写不小于 0 的采购金额'
     } else {
       if (!isNonNegativeNumber(quantity)) errors.quantity = '请填写不小于 0 的活动量'
@@ -173,8 +180,9 @@ export default function RecordCreateDrawer({
       factor_id: factorId,
       review_status: reviewStatus,
       source: 'manual',
+      ...normalizedClassification(classification, scope),
     }
-    if (scope === 'scope3') {
+    if (spendBasis) {
       payload.amount = Number(amount)
       payload.currency = 'CNY'
     } else {
@@ -221,7 +229,7 @@ export default function RecordCreateDrawer({
         }}
       >
         <p className="records-form__meta">
-          Scope 1 / 2 填写活动量与单位；Scope 3 填写采购金额，不填写单位。
+          按因子分母填写活动量与单位，金额法填写未税人民币金额。
         </p>
 
         {submitError ? (
@@ -338,7 +346,7 @@ export default function RecordCreateDrawer({
           </SwissField>
         </div>
 
-        {scope === 'scope3' ? (
+        {spendBasis ? (
           <div className="records-form__full">
             <SwissField
               label="采购金额"
@@ -417,6 +425,7 @@ export default function RecordCreateDrawer({
             onChange={(event) => setRemark(event.target.value)}
           />
         </SwissField>
+        <ClassificationFields companyId={companyId} prefix="new-record" scope={scope} value={classification} onChange={setClassification} />
       </form>
     </SwissDrawer>
   )

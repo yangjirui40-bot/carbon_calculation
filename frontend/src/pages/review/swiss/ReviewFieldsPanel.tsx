@@ -7,6 +7,8 @@ type ReviewFieldsPanelProps = {
   original: Record<string, unknown>
   corrections: Map<string, string[]>
   onChange: (key: string, value: string) => void
+  onFocus?: (key: string) => void
+  readOnly?: boolean
 }
 
 /** 识别字段：可逐项修订，有勾稽纠偏的字段附修订说明 */
@@ -16,12 +18,14 @@ export default function ReviewFieldsPanel({
   original,
   corrections,
   onChange,
+  onFocus,
+  readOnly = false,
 }: ReviewFieldsPanelProps) {
   return (
     <section className="review-fields-panel">
       <div className="review-fields-head">
         <h2>识别字段</h2>
-        <span>{fieldKeys.length} 个字段 · 修订随确认一起提交</span>
+        <span>{fieldKeys.length} 个字段 · {readOnly ? "历史入库字段，只读" : "修订随确认一起提交"}</span>
       </div>
 
       {fieldKeys.map((key) => {
@@ -50,7 +54,9 @@ export default function ReviewFieldsPanel({
               type={isNumeric ? 'number' : 'text'}
               step={isNumeric ? 'any' : undefined}
               value={value}
+              readOnly={readOnly}
               aria-label={fieldLabel(key)}
+              onFocus={() => onFocus?.(key)}
               onChange={(event) => onChange(key, event.target.value)}
             />
 

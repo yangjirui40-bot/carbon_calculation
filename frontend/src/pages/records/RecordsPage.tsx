@@ -1,8 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { BusinessRecord } from '../../api/types'
+import RecordClassificationDrawer from './RecordClassificationDrawer'
 import {
   SwissButton,
   SwissEmpty,
   SwissError,
+  SwissField,
+  SwissSelect,
   SwissMasthead,
   SwissSection,
 } from '../../components/swiss'
@@ -15,7 +19,9 @@ import RecordsToolbar from './RecordsToolbar'
 import { useCompanyOptions } from './useCompanyOptions'
 import { useFactorsOptions } from './useFactorsOptions'
 import { useRecordMutations } from './useRecordMutations'
-import { useRecordsData } from './useRecordsData'
+import { PAGE_SIZE, useRecordsData } from './useRecordsData'
+import { getOrganization } from '../organization/companyData'
+import type { Site } from '../organization/companyData'
 import './records.css'
 
 /** 业务记录：列表、筛选、新增、CSV/XLSX 导入与删除 */
@@ -23,22 +29,14 @@ export default function RecordsPage() {
   const session = readSession()
   const role = session?.user.role ?? null
   const canWrite = role === 'admin' || role === 'enterprise'
-  const canPickCompany = role === 'admin' || role === 'auditor'
+  const canPickCompany = role === 'admin'
   const sessionCompanyId = session?.user.company_id ?? null
 
   const { companyId: contextCompanyId, setCompanyId } = useCompany()
 
-  // 公司优先级：上下文里选中的企业 > 会话绑定企业；审计员为 null 时用企业下拉
   const inheritedCompanyId = contextCompanyId ?? sessionCompanyId
-  // 审计员查询不带 company_id（后端按角色拒绝该过滤），改为前端按所选企业过滤
-  const queryCompanyId =
-    role === 'enterprise'
-      ? sessionCompanyId
-      : role === 'admin'
-        ? inheritedCompanyId
-        : null
-  const displayCompanyId =
-    role === 'enterprise' ? sessionCompanyId : inheritedCompanyId
+  const displayCompanyId = role === 'admin' ? inheritedCompanyId : sessionCompanyId
+  const queryCompanyId = displayCompanyId
   const writeCompanyId =
     role === 'enterprise'
       ? sessionCompanyId
@@ -48,15 +46,26 @@ export default function RecordsPage() {
   const enterpriseBlocked = role === 'enterprise' && sessionCompanyId == null
   const canWriteNow = canWrite && writeCompanyId != null
 
+  const [siteId,setSiteId] = useState<number>()
+  const [sites,setSites] = useState<Site[]>([])
+  useEffect(() => {
+    setSiteId(undefined);setSites([])
+    if (!queryCompanyId) return
+    let active = true
+    void getOrganization(queryCompanyId).then((data) => {if (active) setSites(data.sites)}).catch(() => {})
+    return () => {active=false}
+  },[queryCompanyId])
   const [period, setPeriod] = useState('')
   const [category, setCategory] = useState('')
   const [scope, setScope] = useState('')
   const [reviewStatus, setReviewStatus] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [page, setPage] = useState(1)
+  const [selectedRecord, setSelectedRecord] = useState<BusinessRecord | null>(null)
 
-  const { records, periods, loading, error, reload } = useRecordsData({
+  const { records, periods, total, page: shownPage, loading, error, reload } = useRecordsData({
     companyId: queryCompanyId,
-    period,
+    period, category, scope, reviewStatus, page, siteId,
     enabled: !enterpriseBlocked,
   })
   const {
@@ -83,6 +92,7 @@ export default function RecordsPage() {
     handleImportFile,
     handleConfirmDelete,
     handleCreated,
+    handleEdited,
   } = useRecordMutations({ companyId: writeCompanyId, onChanged: reload })
 
   const categoryOptions = useMemo(() => {
@@ -92,28 +102,19 @@ export default function RecordsPage() {
     return Array.from(values).sort()
   }, [records, factors])
 
-  const visibleRecords = useMemo(() => {
-    let list = records
-    if (role === 'auditor' && displayCompanyId != null) {
-      list = list.filter((record) => record.company_id === displayCompanyId)
-    }
-    if (category) list = list.filter((record) => record.category === category)
-    if (scope) list = list.filter((record) => record.scope === scope)
-    if (reviewStatus) list = list.filter((record) => record.review_status === reviewStatus)
-    return list
-  }, [records, role, displayCompanyId, category, scope, reviewStatus])
-
-  const hasFilters = Boolean(period || category || scope || reviewStatus)
+  const hasFilters = Boolean(period || category || scope || reviewStatus || siteId)
   const selectedCompanyName =
     canPickCompany && displayCompanyId != null
       ? (companies.find((company) => company.id === displayCompanyId)?.name ?? null)
       : null
 
   function clearFilters() {
+    setPage(1)
     setPeriod('')
     setCategory('')
     setScope('')
     setReviewStatus('')
+    setSiteId(undefined)
   }
 
   const actions = canWrite ? (
@@ -132,7 +133,7 @@ export default function RecordsPage() {
 
   return (
     <div className="records-page">
-      <SwissMasthead kicker="数据" title="业务记录" description={description} actions={actions} />
+      <SwissMasthead kicker="数据" title="业务台账" description={description} actions={actions} />
 
       {enterpriseBlocked ? (
         <SwissError
@@ -145,7 +146,7 @@ export default function RecordsPage() {
           title="记录列表"
           extra={
             <span role="status">
-              {loading ? '正在刷新…' : `共 ${visibleRecords.length} 条`}
+              {loading ? '正在刷新…' : `共 ${total} 条`}
             </span>
           }
         >
@@ -160,6 +161,14 @@ export default function RecordsPage() {
             </div>
           ) : null}
 
+          {sites.length > 0 && <SwissField label="工厂" htmlFor="records-filter-site">
+            <SwissSelect id="records-filter-site" value={siteId ?? ''} onChange={(event) => {
+              setSiteId(Number(event.target.value)||undefined);setPage(1)
+            }}>
+              <option value="">全部工厂</option>
+              {sites.map((site) => <option key={site.id} value={site.id}>{site.code} · {site.name}</option>)}
+            </SwissSelect>
+          </SwissField>}
           <RecordsFilters
             showCompany={canPickCompany}
             companies={companies}
@@ -174,14 +183,14 @@ export default function RecordsPage() {
             onCompaniesRetry={reloadCompanies}
             period={period}
             periodOptions={periods}
-            onPeriodChange={setPeriod}
+            onPeriodChange={(value) => { setPeriod(value); setPage(1) }}
             category={category}
             categoryOptions={categoryOptions}
-            onCategoryChange={setCategory}
+            onCategoryChange={(value) => { setCategory(value); setPage(1) }}
             scope={scope}
-            onScopeChange={setScope}
+            onScopeChange={(value) => { setScope(value); setPage(1) }}
             reviewStatus={reviewStatus}
-            onReviewStatusChange={setReviewStatus}
+            onReviewStatusChange={(value) => { setReviewStatus(value); setPage(1) }}
             hasFilters={hasFilters}
             onClear={clearFilters}
           />
@@ -214,21 +223,34 @@ export default function RecordsPage() {
             />
           ) : (
             <RecordsTable
-              records={visibleRecords}
+              records={records}
               companies={companies}
               showCompany={canPickCompany && displayCompanyId == null}
               canWrite={canWrite}
               pendingDeleteNo={pendingDeleteNo}
               deleting={deleting}
+              onEditClassification={setSelectedRecord}
               onRequestDelete={requestDelete}
               onConfirmDelete={() => void handleConfirmDelete()}
               onCancelDelete={cancelDelete}
               emptyText={hasFilters ? '没有符合筛选条件的记录' : '暂无记录'}
             />
           )}
+          {!error && total > PAGE_SIZE && (
+            <div className="records-pager" aria-label="台账分页">
+              <SwissButton variant="ghost" disabled={loading || shownPage <= 1} onClick={() => setPage(shownPage - 1)}>上一页</SwissButton>
+              <span aria-live="polite">{shownPage} / {Math.ceil(total / PAGE_SIZE)} 页</span>
+              <SwissButton variant="ghost" disabled={loading || shownPage * PAGE_SIZE >= total} onClick={() => setPage(shownPage + 1)}>下一页</SwissButton>
+            </div>
+          )}
         </SwissSection>
       )}
 
+      {selectedRecord && <RecordClassificationDrawer key={selectedRecord.id} record={selectedRecord}
+        onClose={() => setSelectedRecord(null)} onChanged={(record, action) => {
+          handleEdited(record, action)
+          setSelectedRecord(null)
+        }} />}
       <RecordCreateDrawer
         open={drawerOpen}
         companyId={writeCompanyId}

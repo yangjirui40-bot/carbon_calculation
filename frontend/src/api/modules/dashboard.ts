@@ -1,5 +1,7 @@
 import { request } from '../client'
 import type {
+  DashboardBudget,
+  DashboardProduction,
   DashboardDrilldown,
   DashboardRing,
   DashboardSankey,
@@ -40,5 +42,21 @@ export function getDrilldown(companyId: number) {
   return request<DashboardDrilldown>({
     url: `/api/v1/dashboard/company/${companyId}/drilldown`,
     method: 'get',
+  })
+}
+
+export function getSnapshot(companyId: number, runId?: string) {
+  return request<{ summary: DashboardSummary; ring: DashboardRing; trend: DashboardTrend; sankey: DashboardSankey; drilldown: DashboardDrilldown; production: DashboardProduction; budget: DashboardBudget }>({
+    url: `/api/v1/dashboard/company/${companyId}/snapshot`,
+    method: 'get',
+    params: { run_id: runId },
+  })
+}
+
+export function saveBudget(companyId: number, year: number, kgco2e: number) {
+  return request<DashboardBudget>({
+    url: `/api/v1/dashboard/company/${companyId}/budgets/${year}`,
+    method: 'put',
+    data: { annual_limit_kgco2e: kgco2e },
   })
 }

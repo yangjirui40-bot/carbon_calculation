@@ -67,6 +67,12 @@ export function useRecordMutations({ companyId, onChanged }: UseRecordMutationsO
     }
   }
 
+  function handleEdited(record: BusinessRecord, action: string) {
+    setSuccessMessage(`记录 ${record.record_no}${action}。`)
+    setActionError(null)
+    onChanged()
+  }
+
   function handleCreated(record: BusinessRecord) {
     setSuccessMessage(`已新增记录 ${record.record_no}。`)
     setActionError(null)
@@ -85,5 +91,6 @@ export function useRecordMutations({ companyId, onChanged }: UseRecordMutationsO
     handleImportFile,
     handleConfirmDelete,
     handleCreated,
+    handleEdited,
   }
 }

@@ -52,3 +52,32 @@
     gap: 0;
   }
 }
+.heatmap-scale { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px; }
+.heatmap-scale span { font-size:12px;padding:4px 8px;background:var(--heat-bg);color:var(--heat-ink);border-radius:4px; }
+[data-risk=red] { --heat-bg:#f7dedc;--heat-ink:#802b32;--heat-edge:#eaa9a8; }
+[data-risk=yellow] { --heat-bg:#fff0d1;--heat-ink:#694409;--heat-edge:#eccb89; }
+[data-risk=green] { --heat-bg:#d8f0e8;--heat-ink:#135948;--heat-edge:#9edbc7; }
+[data-risk=unknown] { --heat-bg:#e8edf4;--heat-ink:#3b536a;--heat-edge:#c2cedc; }
+.heatmap-lanes { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+.heatmap-lane { min-width:0;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:9px; }
+.heatmap-lane h3 { margin:0 0 7px;font-size:13px; }
+.heatmap-lane h3 span { color:var(--muted);font-size:11px;margin-left:4px; }
+.heatmap-cells { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px; }
+.heatmap-cell { display:grid;gap:1px;min-width:0;padding:7px;border:1px solid var(--heat-edge);border-radius:6px;color:var(--heat-ink);background:var(--heat-bg);font:inherit;text-align:left;cursor:pointer; }
+.heatmap-cell:hover,.heatmap-cell[aria-pressed=true] { outline:2px solid var(--heat-ink);outline-offset:0; }
+.heatmap-cell b { display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px; }
+.heatmap-cell strong { font-size:19px;font-variant-numeric:tabular-nums; }
+.heatmap-cell small,.heatmap-note,.heatmap-empty { font-size:12px; }
+.heatmap-note,.heatmap-empty { color:var(--muted);margin:8px 0 0; }
+.heatmap-evidence { border:1px solid var(--accent-border);background:var(--paper);border-radius:8px;margin-top:12px;padding:10px 12px; }
+.heatmap-evidence__head { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+.heatmap-evidence h3 { font-size:15px;margin:0; }
+.heatmap-evidence dl { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0; }
+.heatmap-evidence dt { color:var(--muted);font-size:12px; }
+.heatmap-evidence dd { margin:0;font-size:13px; }
+.heatmap-evidence p,.heatmap-evidence ul { margin:4px 0;font-size:12px; }
+@media(max-width:1060px){.heatmap-lanes { grid-template-columns:1fr; }}
+@media(max-width:660px){.heatmap-evidence dl{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+.sc-disclosure { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 0; }
+.sc-disclosure input { font: inherit; color: inherit; padding: 7px; }

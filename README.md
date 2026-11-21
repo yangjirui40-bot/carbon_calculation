@@ -1,74 +1,47 @@
-# carbon_calculation · 碳速算平台（企业高配完整版）
+# 碳速算平台
 
-电子信息制造业全生命周期碳核算平台：智能票据解析 → 排放因子对齐 → 全公司核算 →
-驾驶舱 → 减排模拟 → 供应链协同 → 绿色金融审计，前后端一体化、可单机一键跑通。
+面向电子信息制造企业的财务驱动碳核算平台。覆盖票据采集与复核、企业排放核算、BOM产品足迹、减排模拟、供应链协同与审计证据导出。
 
-- 技术栈：FastAPI + PostgreSQL + Redis（后端）/ React 19 + Vite + AntD + ECharts（前端，同源托管）
-- 真实 AI 引擎：RapidOCR PP-OCRv4（票据识别）、LayoutLMv3（文档指纹/版面）、
-  SBERT bge-small-zh-v1.5（物料-部门匹配）、POMDP 勾稽纠偏、GCN（供应链热点）、EIO-LCA（2017 全国 42 部门真实表）
-- 企业级能力：多租户、RBAC、AES-256-GCM 字段加密、全量审计、SHA-256 链式存证、
-  Redis 限流、异步任务队列、配额计费、供应商门户、ISO14064/14067/CBAM 报告、Prometheus 监控
+**在线入口：https://carbon.yjr-adc-demo.xyz**
+源码同步日期：2026-11-22。公网和本机的密码分别保存在项目根目录的 `云端账号_勿公开.txt`、`本机账号_勿公开.txt`；均不进入源码包。
 
-## 目录
+## 使用与交付
 
+- [上线与启动说明](上线与启动说明.md)：首次使用、Windows本机启动、Linux运维、备份恢复。
+- [企业运营版产品说明与使用手册](docs/碳速算_企业运营版产品说明与使用手册.docx)：服务对象、岗位、完整业务流程及面板索引。
+- [功能与实现对照](功能与实现对照.md)：六个模块、项目特色、实现边界。
+- [测试报告](测试报告.md)：148项自动检查、63项云端业务验收、浏览器实测及恢复证明。
+- [因子数据来源与核算边界](docs/因子数据来源与核算边界.md)：CEADs原始数据、映射与单位、CO₂和CO₂e区别。
+- [SER训练与验收](docs/SER训练与验收.md)：可选自有票据训练、评估与上线流程。
+
+## 技术与部署
+
+React 19、TypeScript、Vite 8、Ant Design 6、ECharts；FastAPI、SQLAlchemy；PostgreSQL 18.3、Redis 7；Docker Compose、Caddy自动HTTPS。前端构建后由后端同源提供。OCR使用RapidOCR，物料语义匹配使用BGE中文嵌入，财务数值勾稽接入DeepSeek。生产单进程配合限流部署在已有云主机上，数据库与文件卷独立于牙科系统。
+
+```text
+app/                 API、认证、业务服务、AI适配、数据模型
+algorithm_pkg/       Scope核算、EIO-LCA、PCF、减排情景算法
+frontend/            页面源码与构建配置
+data/io/             MRIO聚合表、CEADs部门映射、强度向量与溯源元数据
+migrations/          数据库迁移
+tests/               API、企业隔离、票据/PDF与导出检查
+docs/                核算边界、模型训练、验收证据
+scripts/             独立本机配置与启动脚本
+deploy/              服务器维护、Caddy站点和备份定时任务
+compose.local.yml    隔离的本机环境，入口127.0.0.1:18083
+deploy.compose.cohost.yml  现有服务器部署配置
 ```
-app/             FastAPI 应用（api/ services/ models/ schemas/）
-algorithm_pkg/   算法包（Scope1/2/3、PCF、EIO-LCA、情景、引擎）
-frontend/        React 前端工程（npm ci && npm run build → frontend/dist）
-migrations/      Alembic 迁移（OLTP 3NF 21 表 + OLAP 星型 6 表）
-data/io/         2017 全国 42 部门投入产出表（io2017_42sector.csv）
-tests/           后端测试（unittest 52/52）
-scripts/         运维脚本（e2e_frontend.py、fetch_io_data.py）
-部署相关         Dockerfile（多阶段含前端）、docker-compose.yml（含监控 profile）、.github/workflows/ci.yml
-```
 
-## 快速开始
+## 本机快速启动
 
-### 本机（需 Python 3.12、Node ≥ 20.19、PostgreSQL、Redis）
+当前电脑双击 `启动本机平台.cmd`。也可在Ubuntu WSL中进入此目录执行：
 
 ```bash
-# 1. 前端构建（同源托管）
-cd frontend && npm ci && npm run build && cd ..
-
-# 2. 数据库/种子（PowerShell 示例；默认 postgresql+psycopg2://carbonspeed:carbonspeed_2026_Db_x7KpQ2@localhost:5433/carbonspeed）
-python -m app.seed
-
-# 3. 启动
-python run.py            # http://127.0.0.1:8000 = 完整前端 + /api/v1 + /docs + /metrics
+python3 scripts/start_local.py
 ```
 
-依赖安装：`pip install -r requirements.txt`（CPU 版 torch 建议先
-`pip install torch --index-url https://download.pytorch.org/whl/cpu`）。
-Windows 开发机如需离线使用捆绑 vendor，可设 `PYTHONPATH=backend\vendor`。
+脚本需要能访问Docker；本电脑的启动器会使用已安装的Ubuntu-22.04和root运行Docker。首次创建私密配置，之后保留配置和数据库。新电脑需安装Docker；不存在预构建镜像时Compose按Dockerfile构建，需下载依赖。正式步骤见启动说明。
 
-### Docker 一键（含前端构建）
+## 结果的适用范围
 
-```bash
-docker compose up -d --build              # PostgreSQL + Redis + 后端(含前端) 
-docker compose --profile monitoring up -d # 可选：Prometheus + Alertmanager + Grafana
-```
-
-AI 模型（首次约 2GB）由 `HF_ENDPOINT=https://hf-mirror.com` 下载到 `models_cache/`；
-生产可挂载卷 `carbonspeed-models` 持久化。
-
-## 演示账号（seed 后可用）
-
-| 角色 | 用户名 | 密码 | 说明 |
-|---|---|---|---|
-| 管理员 | admin | admin123 | 全部企业 + 管理后台 |
-| 企业 | enterprise | enterprise123 | 企业 demo-001 |
-| 审计员 | auditor | auditor123 | 只读 + 复核队列 |
-| 供应商 | supplier | supplier123 | 供应商门户 sup-t1-a |
-
-## 验证结果（本机实测）
-
-- 后端测试 `python -m unittest tests.test_api`：**52/52 通过**（含 EIO-LCA 42 部门、OCR 解析、星型 OLAP、不确定性）
-- 前端契约端到端 `python scripts/e2e_frontend.py`（需后端运行）：**67/67 通过**
-- OCR 噪声回归：64/66 = 97.0%；压测 20 并发 P50=132ms / P95=441ms / P99=511ms，0 失败
-- 核算基准：演示企业 4303.2 kgCO2e；PCF 3470；官方因子集 Scope1=104.0（柴油 2.60）、Scope2=684.36（电力 0.5703）
-
-## 文档
-
-- [交付文档.md](交付文档.md)：78 个接口样本、错误码、服务联通、部署、前端对接约定
-- [frontend/README.md](frontend/README.md)：前端工程说明与联调约定
-- [data/io/README.md](data/io/README.md)：42 部门投入产出表与 CO2 清单（g 向量）获取指引
+已接通的主流程使用真实OCR、BGE与DeepSeek。自有票据SER训练、商业发票查验、支付收款及第三方核证不属于当前已验证外部服务。42部门EEIO研究因子只覆盖本平台三类采购估算；它们不是官方Scope 3发布因子。当前未覆盖Scope 3全部15类，不应宣称完整生命周期认证。报告与哈希证据供复核使用，不能替代独立核证或官方申报。

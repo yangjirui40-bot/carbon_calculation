@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String, Text
 
+from sqlalchemy.orm import relationship
+
 from ..database import Base
 from .base import TimestampMixin
 
@@ -27,6 +29,9 @@ class BusinessRecord(Base, TimestampMixin):
     source = Column(String(32), nullable=False, default="manual")  # manual/excel/api/photo
     document_id = Column(Integer, ForeignKey("source_documents.id"), nullable=True)
     remark = Column(Text, nullable=True)
+    revisions = relationship("ActivityRevision", lazy="raise", cascade="save-update")
+    location = relationship("ActivityLocation", uselist=False, lazy="selectin", cascade="all, delete-orphan")
+    dimensions = relationship("RecordDimensions", uselist=False, lazy="selectin", cascade="all, delete-orphan")
 
 
 class SourceDocument(Base, TimestampMixin):
@@ -77,3 +82,4 @@ class BOMItem(Base, TimestampMixin):
     matched_category = Column(String(64), nullable=True)
     matched_factor_id = Column(String(64), ForeignKey("emission_factors.factor_id"), nullable=True)
     match_confidence = Column(Float, nullable=True)  # SBERT 语义对齐置信度
+    assembly = relationship("BomAssembly", uselist=False, lazy="selectin", cascade="all, delete-orphan")

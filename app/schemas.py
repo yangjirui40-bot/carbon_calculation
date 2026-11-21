@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from typing import Annotated
 
 
 class ORMModel(BaseModel):
@@ -18,6 +19,7 @@ class UserCreate(BaseModel):
     role: str = "enterprise"
     company_id: Optional[int] = None
     supplier_id: Optional[str] = None
+    company_name: Optional[str] = Field(default=None, min_length=2, max_length=255)
 
 
 class UserLogin(BaseModel):
@@ -100,10 +102,24 @@ class FactorOut(ORMModel):
 
 
 # ---------- 业务记录 ----------
-class RecordCreate(BaseModel):
+class RecordClassification(BaseModel):
+    workshop: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)] | None = None
+    production_line: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)] | None = None
+    scope3_category: int | None = Field(None, ge=1, le=15)
+
+    @model_validator(mode="after")
+    def validate_line(self):
+        if self.production_line and not self.workshop:
+            raise ValueError("填写产线时需要同时填写车间")
+        return self
+
+
+class RecordCreate(RecordClassification):
+    site_id: Optional[int] = None
+    org_unit_id: Optional[int] = None
     record_no: str
     company_id: int
-    period: str
+    period: str = Field(pattern=r"^[1-9][0-9]{3}-(0[1-9]|1[0-2])$")
     category: str
     scope: str
     quantity: Optional[float] = None
@@ -115,6 +131,12 @@ class RecordCreate(BaseModel):
     source: str = "manual"
     document_id: Optional[int] = None
     remark: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_classification(self):
+        if self.scope3_category is not None and self.scope != "scope3":
+            raise ValueError("仅范围 3 记录可归入价值链分类")
+        return self
 
 
 class RecordOut(ORMModel):
@@ -144,9 +166,19 @@ class ProductCreate(BaseModel):
 
 
 class BOMItemCreate(BaseModel):
-    bom_item_id: str
-    material_name: str
-    material_amount: float = Field(ge=0)
+    bom_item_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
+    material_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+    material_amount: float = Field(ge=0, allow_inf_nan=False)
+    assembly_path: str | None = Field(None, max_length=240)
+
+    @model_validator(mode="after")
+    def normalize_path(self):
+        if self.assembly_path is not None:
+            parts = [part.strip() for part in self.assembly_path.split("/")]
+            if not 1 <= len(parts) <= 8 or any(not part or len(part) > 80 or part in (".", "..") for part in parts):
+                raise ValueError("组件路径用 / 分隔，最多 8 级，每级最多 80 字")
+            self.assembly_path = "/".join(parts)
+        return self
     currency: str = "CNY"
     matched_category: Optional[str] = None
     matched_factor_id: Optional[str] = None
@@ -154,7 +186,7 @@ class BOMItemCreate(BaseModel):
 
 
 class BOMImport(BaseModel):
-    bom_items: list[BOMItemCreate]
+    bom_items: list[BOMItemCreate] = Field(min_length=1, max_length=10000)
 
 
 # ---------- 核算请求 ----------
@@ -179,12 +211,24 @@ class ProductCalcRequest(BaseModel):
     factor_set: Optional[str] = None
 
 
+class ScenarioFinance(BaseModel):
+    capex: float = Field(ge=0, le=1e12, allow_inf_nan=False)
+    annual_opex: float = Field(ge=0, le=1e12, allow_inf_nan=False)
+    annual_saving: float = Field(ge=0, le=1e12, allow_inf_nan=False)
+    carbon_price: float = Field(default=0, ge=0, le=100000, allow_inf_nan=False)
+    project_life: int = Field(default=8, ge=1, le=50)
+    discount_rate: float = Field(default=.08, ge=0, le=1, allow_inf_nan=False)
+
+
 class ScenarioCalcRequest(BaseModel):
     company_id: int
     scenario_id: Optional[str] = None
     scenario_name: Optional[str] = "未命名情景"
     electricity_saving_rate: float = Field(0, ge=0, le=1)
     procurement_reduction_rate: float = Field(0, ge=0, le=1)
+    electricity_substitution_rate: float = Field(0, ge=0, le=1)
+    finance: ScenarioFinance | None = None
+    forecast_months: int = Field(6, ge=1, le=36)
     baseline_run_id: Optional[str] = None
     factor_set: Optional[str] = None
 

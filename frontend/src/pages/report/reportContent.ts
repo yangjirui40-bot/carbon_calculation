@@ -31,6 +31,9 @@ export type PcfReportItem = {
 }
 
 export type IsoReportContent = {
+  boundarySites: {name:string; entity:string; share:number}[]
+  coverage: {category:number; status:string; rationale:string}[]
+  internalApproval: { period: string; revision: number; boundary: string } | null
   standard: string | null
   companyName: string | null
   companyCode: string | null
@@ -48,6 +51,9 @@ export type IsoReportContent = {
 }
 
 export type PcfReportContent = {
+  study: {name:string; version:number; boundary:string} | null
+  studyTotal: number | null
+  productionKg: number | null
   standard: string | null
   productId: string | null
   productName: string | null
@@ -123,6 +129,7 @@ function readPcfItem(value: unknown): PcfReportItem | null {
 }
 
 export function readIsoContent(content: UnknownRecord | null): IsoReportContent {
+  const approval = asRecord(content?.['internal_approval'])
   const company = asRecord(content?.['company'])
   const scope = asRecord(content?.['scope_breakdown'])
   const items = readArray(content, 'items')
@@ -131,6 +138,19 @@ export function readIsoContent(content: UnknownRecord | null): IsoReportContent 
 
   return {
     standard: readString(content, 'standard'),
+    boundarySites: readArray(asRecord(content?.['boundary_snapshot']), 'sites').map(asRecord).map((site) => ({
+      name:readString(site,'name') ?? '',
+      entity:readString(site,'legal_entity') ?? '',
+      share:readNumber(site,'share_ratio') ?? 0,
+    })),
+    coverage: readArray(content,'scope_assessments').map(asRecord).map((row) => ({
+      category: readNumber(row,'category') ?? 0, status: readString(row,'status') ?? '', rationale:readString(row,'rationale') ?? '',
+    })),
+    internalApproval: approval ? {
+      period: readString(approval, 'period') ?? '',
+      revision: readNumber(approval, 'revision') ?? 1,
+      boundary: readString(approval, 'boundary') ?? '',
+    } : null,
     companyName: displayText(readString(company, 'name')),
     companyCode: readString(company, 'code'),
     companyIndustry: displayText(readString(company, 'industry')),
@@ -149,12 +169,16 @@ export function readIsoContent(content: UnknownRecord | null): IsoReportContent 
 
 export function readPcfContent(content: UnknownRecord | null): PcfReportContent {
   const product = asRecord(content?.['product'])
+  const study = asRecord(content?.['study'])
   const items = readArray(content, 'items')
     .map(readPcfItem)
     .filter((item): item is PcfReportItem => item !== null)
 
   return {
     standard: readString(content, 'standard'),
+    study: study ? {name:readString(study,'name') ?? '', version:readNumber(study,'version_no') ?? 1, boundary:readString(study,'boundary_note') ?? ''} : null,
+    studyTotal: readNumber(content,'total_study_emissions_kgco2e'),
+    productionKg: readNumber(content,'production_emissions_kgco2e'),
     productId: readString(product, 'product_id'),
     productName: displayText(readString(product, 'product_name')),
     outputQuantity: readNumber(product, 'output_quantity'),
@@ -187,29 +211,9 @@ export function scopeLabel(value: string | null): string {
   return SCOPE_LABEL_BY_KEY[value] ?? value
 }
 
-const DISPLAY_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/项目演示设定/g, '项目设定'],
-  [/业务模拟数据/g, '业务数据'],
-  [/非审计报告/g, '核算报告'],
-  [/非审计/g, '核算'],
-  [/模拟数据/g, '业务数据'],
-  [/演示设定/g, '项目设定'],
-  [/演示数据/g, '项目数据'],
-  [/演示因子/g, '项目因子'],
-  [/演示/g, '项目'],
-  [/模拟/g, '业务'],
-]
-
-/**
- * 页面口径（2026-11-04）不出现“模拟 / 演示 / 非审计”字样。
- * 后端说明文字可能带这些词，展示前做中性化替换，不改变数值与结构。
- */
+/** Preserve source wording, including demonstration and audit limitations. */
 export function displayText(value: string | null): string | null {
-  if (!value) return null
-  return DISPLAY_REPLACEMENTS.reduce(
-    (text, [pattern, replacement]) => text.replace(pattern, replacement),
-    value,
-  )
+  return value || null
 }
 
 /** 2026-10 → 2026 年 10 月；其他格式原样返回 */

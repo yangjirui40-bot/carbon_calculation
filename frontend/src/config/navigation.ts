@@ -20,62 +20,41 @@ export type NavGroup = {
 }
 
 export const NAV_GROUPS: NavGroup[] = [
-  {
-    title: '总览',
-    items: [
-      { key: 'workspace', label: '工作台', to: '/workspace' },
-      { key: 'dashboard', label: '驾驶舱', to: '/dashboard' },
-    ],
-  },
-  {
-    title: '数据',
-    items: [
-      { key: 'documents', label: '单据管理', to: '/documents' },
-      { key: 'records', label: '业务记录', to: '/records' },
-      { key: 'factors', label: '因子库', to: '/factors' },
-    ],
-  },
-  {
-    title: '核算',
-    items: [
-      { key: 'calculations', label: '核算中心', to: '/calculations' },
-      { key: 'eiolca', label: 'EIO-LCA', to: '/calculations/eiolca' },
-      { key: 'products', label: '产品碳足迹', to: '/products' },
-    ],
-  },
-  {
-    title: '报告',
-    items: [{ key: 'reports', label: '报告中心', to: '/reports' }],
-  },
-  {
-    title: '分析',
-    items: [{ key: 'simulator', label: '减排模拟', to: '/simulator' }],
-  },
-  {
-    title: '协同',
-    items: [
-      { key: 'supply-chain', label: '供应链总览', to: '/supply-chain' },
-      { key: 'supply-chain-suppliers', label: '供应商', to: '/supply-chain/suppliers' },
-      { key: 'supply-chain-quotas', label: '配额', to: '/supply-chain/quotas' },
-      { key: 'supply-chain-trades', label: '交易', to: '/supply-chain/trades' },
-    ],
-  },
-  {
-    title: '审计',
-    items: [{ key: 'audit', label: '审计日志', to: '/audit' }],
-  },
-  {
-    title: '设置',
-    items: [{ key: 'billing', label: '订阅用量', to: '/billing' }],
-  },
-  {
-    title: '管理后台',
-    items: [
-      { key: 'admin-companies', label: '企业管理', to: '/admin/companies', roles: ['admin'] },
-      { key: 'admin-users', label: '账号开通', to: '/admin/users', roles: ['admin'] },
-      { key: 'system', label: '系统运维', to: '/system', roles: ['admin'] },
-    ],
-  },
+  { title: '企业概览', items: [
+    { key: 'workspace', label: '工作台', to: '/workspace' },
+    { key: 'organization', label: '企业与组织', to: '/organization' },
+    { key: 'dashboard', label: '排放驾驶舱', to: '/dashboard' },
+  ] },
+  { title: '数据与核算', items: [
+    { key: 'documents', label: '数据解析', to: '/documents' },
+    { key: 'integrations', label: 'ERP 与数据接入', to: '/integrations', roles: ['admin','enterprise'] },
+    { key: 'factory', label: '工厂计量与预算', to: '/factory' },
+    { key: 'energy', label: '绿电凭证', to: '/energy' },
+    { key: 'records', label: '业务台账', to: '/records' },
+    { key: 'factors', label: '排放因子', to: '/factors' },
+    { key: 'company-factors', label: '企业因子', to: '/company-factors' },
+    { key: 'inventory', label: '月度盘查', to: '/inventory' },
+    { key: 'calculations', label: '企业核算', to: '/calculations' },
+    { key: 'products', label: '产品碳足迹', to: '/products' },
+    { key: 'eiolca', label: '投入产出分析', to: '/calculations/eiolca' },
+  ] },
+  { title: '减排与协同', items: [
+    { key: 'simulator', label: '减排模拟器', to: '/simulator' },
+    { key: 'supply-chain', label: '供应链碳热力图', to: '/supply-chain' },
+    { key: 'supplier-disclosures', label: '供应商披露任务', to: '/disclosures' },
+    { key: 'supply-chain-suppliers', label: '供应商', to: '/supply-chain/suppliers' },
+    { key: 'supply-chain-quotas', label: '内部配额', to: '/supply-chain/quotas' },
+    { key: 'supply-chain-trades', label: '配额转移', to: '/supply-chain/trades' },
+  ] },
+  { title: '报告与管理', items: [
+    { key: 'reports', label: '报告中心', to: '/reports' },
+    { key: 'audit', label: '核算审计', to: '/audit' },
+    { key: 'journals', label: '运营流水', to: '/journals' },
+    { key: 'billing', label: '订阅用量', to: '/billing' },
+    { key: 'admin-companies', label: '企业管理', to: '/admin/companies', roles: ['admin'] },
+    { key: 'admin-users', label: '账号开通', to: '/admin/users', roles: ['admin'] },
+    { key: 'system', label: '系统运维', to: '/system', roles: ['admin'] },
+  ] },
 ]
 
 /**

@@ -20,10 +20,10 @@ export default function DashboardKpis({ summary, ring }: DashboardKpisProps) {
     <section className="dash-kpis" aria-label="总览指标">
       <div className="dash-kpi">
         <SwissStat
-          label="总排放 / Total"
-          value={formatEmission(summary.total_kgco2e)}
+          label="总排放"
+          value={formatEmission(summary.run_id ? summary.total_kgco2e : null)}
           unit="kgCO₂e"
-          hint={`${summary.period ?? '—'} · ${formatNumber(summary.total_kgco2e / 1000, 2)} tCO₂e`}
+          hint={`${summary.run_id ? formatNumber(summary.total_kgco2e / 1000, 2) + ' tCO₂e' : '等待首次核算'}`}
         />
       </div>
       {SCOPES.map((item) => {
@@ -32,7 +32,7 @@ export default function DashboardKpis({ summary, ring }: DashboardKpisProps) {
           <div className="dash-kpi" key={item.scope}>
             <SwissStat
               label={item.label}
-              value={formatEmission(summary.scope_breakdown[item.scope])}
+              value={formatEmission(summary.run_id ? summary.scope_breakdown[item.scope] : null)}
               unit="kgCO₂e"
               hint={typeof ratio === 'number' ? `占本期 ${formatPercent(ratio)}` : '—'}
             />

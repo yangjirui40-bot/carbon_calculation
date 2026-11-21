@@ -1,0 +1,25 @@
+{
+  "source_doi": "10.6084/m9.figshare.9784370",
+  "source_url": "https://figshare.com/articles/dataset/9784370",
+  "source_file_sha256": "1ca21c79ef3989df82dbaa98cddcae90076bf7b7dd3b39f3d39ee29b549160e6",
+  "license": "CC BY 4.0",
+  "source_authors": "Shan, Huang, Hubacek, Tian, Guan (2019)",
+  "inventory_year": 2017,
+  "io_year": 2017,
+  "gas_coverage": "CO2-only",
+  "direct_intensity_unit": "kgCO2/2017-CNY-10000",
+  "schema_note": "kgco2e_per_wan is the legacy input column name; source contains CO2 only (GWP=1), not a full GHG inventory",
+  "price_basis": "2017 producer-price domestic MRIO aggregation; no purchaser-price, import or inter-year deflator adjustment",
+  "source_production_total_kgco2": 8893570000000.0,
+  "excluded_rows": [
+    50,
+    51
+  ],
+  "excluded_scope": "Urban and rural household emissions excluded from production sector intensities",
+  "crosswalk_note": "Broad CEADs transport/telecommunications, trade/catering and other-service sectors are allocated to 42-sector targets in proportion to gross output. This is a documented research assumption, NOT an observed official 42-sector emissions inventory. Logging included in agriculture. Repair included in other-services allocation.",
+  "crosswalk_sha256": "f6100e2a0e3df37e93caaee79bbe189f2088f76aa31abc5acdf667db05e6f176",
+  "g_sha256": "dc3bb24b9e1ae6643783d4743b5aaa11ffc735617f562cd2445f8849f6a8e9bd",
+  "io_sha256": "0e848f35f16909499265f47cb846634e80a2557d4811fa1e3ad8ce8e5dd802bc",
+  "government_published_factor": false,
+  "uncertainty_pct": null
+}

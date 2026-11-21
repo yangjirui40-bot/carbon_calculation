@@ -1,19 +1,10 @@
 /* 单据管理 · 瑞士风格方案 2 · 上传工作区 */
 
 .doc-swiss {
-  --paper: #f1eee5;
-  --ink: #14211c;
-  --muted: #6d726a;
-  --rule: #d3ccbd;
-  --rule-soft: #e2dccf;
-  --accent: #0e3b2e;
-  --lime: #c9f45b;
-  --fail: #a33a2a;
-  --warn: #9a5b13;
 
   background: var(--paper);
   color: var(--ink);
-  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family-base);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -134,3 +125,40 @@
     font-size: 32px;
   }
 }
+
+@media (max-width: 760px) {
+  .doc-page-head { flex-direction: column; gap: 16px; padding-top: 24px; }
+  .doc-page-head > div { min-width: 0; width: 100%; }
+  .doc-page-head h1 { line-height: 1.2; }
+  .doc-page-head p { max-width: 34em; line-height: 1.65; }
+  .doc-head-side { flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  .doc-company { min-width: 0; flex: 1 1 240px; }
+  .doc-company select { min-width: 0; max-width: 100%; flex: 1; text-overflow: ellipsis; }
+}
+
+.doc-grid.is-readonly { grid-template-columns: minmax(0, 1fr); }
+.doc-page-head h1 { font-size: clamp(25px, 2.55vw, 34px); line-height: 1.22; letter-spacing: -0.025em; }
+.doc-grid { gap: 17px; }
+.doc-list-panel, .doc-upload-panel { min-width: 0; }
+.doc-list-panel { border: 1px solid var(--rule); padding: 16px; border-radius: 10px; background: var(--paper-raised); }
+.doc-upload-box { border-radius: 10px; background: var(--paper-raised); min-height: 0; }
+.doc-upload-box h2 { font-size: 18px; }
+.doc-upload-icon { background: var(--accent-soft); color: var(--accent); border-radius: 8px; font-size: 23px; }
+.doc-upload-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.doc-btn-primary, .doc-camera, .doc-type-chip { border-radius: 6px; }
+.doc-camera { display: none; min-height: 40px; align-items: center; gap: 5px; padding: 0 10px; border: 1px solid var(--rule); background: var(--paper-raised); color: var(--accent); font: inherit; cursor: pointer; }
+.doc-camera:disabled { opacity: .55; cursor: not-allowed; }
+.doc-manual { display: flex; min-height: 40px; text-align: left; text-decoration: none; align-items: center; }
+.doc-batch { max-height: 300px; overflow-y: auto; margin: 10px 0; background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 8px; }
+.doc-batch__item { padding: 9px 11px; overflow-wrap: anywhere; border-bottom: 1px solid var(--rule-soft); font-size: 12px; }
+.doc-batch__item > div { display: flex; gap: 8px; justify-content: space-between; }
+.doc-batch__item span { color: var(--accent); flex: none; }
+.doc-batch__item p { color: var(--muted); margin: 5px 0 0; }
+.doc-batch__item a { display: inline-block; margin-top: 5px; color: var(--accent); }
+@media (pointer: coarse) { .doc-camera { display: inline-flex; } }
+.doc-page-head { padding: 25px 0 20px; }
+.doc-page-head p { color: var(--muted); font-size: 13px; }
+.doc-grid { align-items: start; }
+.doc-list-head h2 { font-size: 16px; }
+.doc-file b { font-size: 13px; }
+.doc-manual { padding-inline: 10px; }

@@ -34,13 +34,11 @@ export function runStatusLabel(status: string | null | undefined): string {
 }
 
 /**
- * 页面不展示含“模拟 / 演示 / 非审计”字样的文案（2026-11-04 项目决定）。
+ * 保留因子来源和适用性提示，便于使用者判断结果。
  * 数据性质只在文档与答辩口头说明；这里只过滤展示文本，不改后端数据。
  */
 export function visibleWarnings(warnings: string[] | null | undefined): string[] {
-  return (warnings ?? []).filter(
-    (warning) => !/模拟|演示|非审计/.test(warning),
-  )
+  return warnings ?? []
 }
 
 export function errorMessage(error: unknown): string {

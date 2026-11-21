@@ -1,0 +1,15 @@
+.risk-explorer{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;margin:12px 0;color:#223f4c}
+.risk-explorer h3{display:flex;align-items:center;gap:8px;font-size:16px;margin:0 0 12px}
+.risk-explorer h3 small,.risk-explorer p,.risk-key{color:#536975;font-size:12px;font-weight:400}
+.risk-explorer h3 button{margin-left:auto;border:0;background:transparent;color:#155c61;font-size:12px;text-decoration:underline}
+.risk-matrix{width:100%;border-spacing:4px;table-layout:fixed;font-variant-numeric:tabular-nums}
+.risk-matrix th{font-size:12px;font-weight:550;text-align:center}.risk-matrix th:first-child{text-align:left}
+.risk-matrix button{width:100%;height:43px;font-size:19px;font-weight:650;border:1px solid transparent;border-radius:4px}
+.risk-explorer [data-risk=red]{--risk:#9d3c30;--wash:#f6dbd1}.risk-explorer [data-risk=yellow]{--risk:#865717;--wash:#f8e9c9}
+.risk-explorer [data-risk=green]{--risk:#21685b;--wash:#d8eee5}.risk-explorer [data-risk=unknown]{--risk:#4d5f70;--wash:#e4e9ef}
+.risk-matrix button{background:var(--wash);color:var(--risk)}.risk-matrix button:disabled{color:#73818b;background:#f2f5f6}
+.risk-matrix button[aria-pressed=true],.risk-explorer button:focus-visible{outline:2px solid #234957;outline-offset:1px}
+.risk-key,.risk-list button{display:flex;width:100%;align-items:center;gap:10px}.risk-key{justify-content:space-between;background:#eff4f5;padding:5px 11px}
+.risk-list{max-height:212px;overflow:auto;scrollbar-gutter:stable}.risk-list button{background:white;border:0;border-bottom:1px solid #e1e9ea;padding:8px 7px;text-align:left;color:#29424d}
+.risk-list button:hover,.risk-list button[aria-pressed=true]{background:#ecf4f3}.risk-list i{width:4px;height:28px;background:var(--risk);border-radius:3px}.risk-list b,.risk-list small{display:block}.risk-list b{font-size:13px}.risk-list small{color:#536977;font-size:11px}.risk-list strong{margin-left:auto;font-variant-numeric:tabular-nums}.risk-list em{font-style:normal}
+@media(max-width:820px){.risk-explorer{grid-template-columns:1fr;gap:12px}.risk-matrix th{font-size:11px}.risk-key{box-sizing:border-box}}

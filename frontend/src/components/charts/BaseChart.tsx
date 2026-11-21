@@ -1,5 +1,5 @@
 import { init, type ECharts, type EChartsOption } from 'echarts'
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import './BaseChart.css'
 
 type BaseChartProps = {
@@ -10,6 +10,7 @@ type BaseChartProps = {
   /** 没有数据时显示占位，不画空坐标轴 */
   isEmpty?: boolean
   emptyText?: string
+  onItemClick?: (data: unknown, dataType?: string) => void
 }
 
 /**
@@ -22,35 +23,56 @@ export default function BaseChart({
   height = 320,
   isEmpty = false,
   emptyText = '暂无数据',
+  onItemClick,
 }: BaseChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const chartRef = useRef<ECharts | null>(null)
+  const latest = useRef({ option, onItemClick })
+  const refresh = useRef<(() => void) | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    latest.current = { option, onItemClick }
+    refresh.current?.()
+  }, [option, onItemClick])
+
+  useLayoutEffect(() => {
     const container = containerRef.current
     if (!container || isEmpty) return
+    let chart: ECharts | undefined
+    let applied: EChartsOption | undefined
 
-    const chart = init(container)
-    chartRef.current = chart
+    const render = () => {
+      const width = container.clientWidth
+      const height = container.clientHeight
+      // A tab or route can disappear before ResizeObserver delivers its last event.
+      // A zero-sized Sankey has no invertible view transform.
+      if (!container.isConnected || width < 2 || height < 2) return
+      if (!chart) {
+        chart = init(container, undefined, { width, height })
+        chart.on('click', (event: { data: unknown; dataType?: string }) =>
+          latest.current.onItemClick?.(event.data, event.dataType))
+      } else if (chart.getWidth() !== width || chart.getHeight() !== height) {
+        chart.resize({ width, height })
+      }
+      const next = latest.current.option
+      if (next === applied) return
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      chart.setOption({
+        animationDuration: 240, animationDurationUpdate: 170, ...next,
+        ...(reduceMotion ? { animation: false } : {}),
+      }, { notMerge: true })
+      applied = next
+    }
 
-    const handleResize = () => chart.resize()
-    window.addEventListener('resize', handleResize)
-
-    const observer = new ResizeObserver(() => chart.resize())
+    refresh.current = render
+    render()
+    const observer = new ResizeObserver(render)
     observer.observe(container)
-
     return () => {
-      window.removeEventListener('resize', handleResize)
+      refresh.current = null
       observer.disconnect()
-      chart.dispose()
-      chartRef.current = null
+      chart?.dispose()
     }
   }, [isEmpty])
-
-  useEffect(() => {
-    if (isEmpty) return
-    chartRef.current?.setOption(option, { notMerge: true })
-  }, [option, isEmpty])
 
   return (
     <figure className="base-chart">

@@ -134,3 +134,20 @@ export function getTradeReconciliation(companyId: number) {
     method: 'get',
   })
 }
+
+export function updateReductionProgress(companyId: number, planId: string, progress: number) {
+  return request<ReductionPlanRecord>({
+    url: `/api/v1/supply-chain/${companyId}/reduction-plans/${encodeURIComponent(planId)}`,
+    method: 'patch',
+    data: { progress },
+  })
+}
+
+
+export function getSupplierEvidence(companyId: number, supplierId: string, signal?: AbortSignal) {
+  return request<import('../types').SupplierEvidence>({
+    url: `/api/v1/supply-chain/${companyId}/suppliers/${encodeURIComponent(supplierId)}/evidence`,
+    method: 'get',
+    signal,
+  })
+}

@@ -1,434 +1,231 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import type { EChartsOption } from 'echarts'
 import { calculationsApi, simulatorApi } from '../../../api'
-import type {
-  CalculationRunSummary,
-  ScenarioRecord,
-  ScenarioResultData,
-} from '../../../api/types'
-import {
-  SwissButton,
-  SwissEmpty,
-  SwissError,
-  SwissField,
-  SwissInput,
-  SwissSection,
-  SwissSelect,
-  SwissStat,
-  SwissTable,
-} from '../../../components/swiss'
-import type { SwissTableColumn } from '../../../components/swiss'
-import { formatDateTime, formatEmission, formatPercent } from '../../../utils/format'
-import { errorMessage, visibleWarnings } from '../../products/labels'
+import type { CalculationRunSummary, ScenarioFinance, ScenarioPreviewData, ScenarioRates, ScenarioRecord } from '../../../api/types'
+import BaseChart from '../../../components/charts/BaseChart'
+import { SwissButton, SwissEmpty, SwissSection, SwissTable } from '../../../components/swiss'
+import { formatAmount, formatEmission, formatNumber, formatPercent } from '../../../utils/format'
+import { errorMessage } from '../../products/labels'
+import InvestmentOutcome from './InvestmentOutcome'
 import './ScenarioTab.css'
 
-type ScenarioTabProps = {
-  companyId: number
-  canWrite: boolean
-}
-
-type FieldErrors = Record<string, string>
-
-const SCENARIO_COLUMNS: SwissTableColumn[] = [
-  { key: 'scenarioId', title: '情景编号' },
-  { key: 'name', title: '名称' },
-  { key: 'baseline', title: '基线运行' },
-  { key: 'electricity', title: '节电比例', align: 'right' },
-  { key: 'procurement', title: '采购降幅', align: 'right' },
-  { key: 'baselineTotal', title: '基线排放 (kgCO₂e)', align: 'right' },
-  { key: 'scenarioTotal', title: '情景排放 (kgCO₂e)', align: 'right' },
-  { key: 'reduction', title: '减排量 (kgCO₂e)', align: 'right' },
-  { key: 'reductionRate', title: '减排率', align: 'right' },
+const controls: Array<{ key: keyof ScenarioRates; name: string; help: string; aria: string }> = [
+  { key: 'electricity_saving_rate', name: '设备节电', help: '降低原用电需求', aria: '拖动调整节电比例' },
+  { key: 'electricity_substitution_rate', name: '自发绿电替代', help: '替代节电后剩余的外购电量', aria: '调整绿电替代比例' },
+  { key: 'procurement_reduction_rate', name: '采购减量', help: '同比例降低纳入核算的采购金额', aria: '拖动调整采购降幅' },
 ]
 
-/** 比例输入提示：输入 0—1，展示对应百分比 */
-function rateHint(raw: string): string {
-  if (!raw.trim()) return '0—1 的小数，例如 0.10 表示 10%'
-  const value = Number(raw)
-  if (!Number.isFinite(value)) return '请输入 0—1 之间的小数'
-  if (value < 0 || value > 1) return '需在 0—1 之间'
-  return `相当于 ${(value * 100).toFixed(1)}%`
+const financeFields: Array<{ key: keyof ScenarioFinance; name: string; min: number; max: number; step: number }> = [
+  { key: 'capex', name: '初始投资（元）', min: 0, max: 1e12, step: 1000 },
+  { key: 'annual_saving', name: '年节约（元）', min: 0, max: 1e12, step: 1000 },
+  { key: 'annual_opex', name: '年运维（元）', min: 0, max: 1e12, step: 1000 },
+  { key: 'carbon_price', name: '碳价假设（元/吨）', min: 0, max: 100000, step: 1 },
+  { key: 'project_life', name: '项目年限', min: 1, max: 50, step: 1 },
+  { key: 'discount_rate', name: '折现率（0–1）', min: 0, max: 1, step: .01 },
+]
+
+const startingFinance = { capex: 480000, annual_saving: 155000, annual_opex: 28000, carbon_price: 0, project_life: 8, discount_rate: .08 }
+
+function PreviewChart({ result }: { result: ScenarioPreviewData }) {
+  const { historical, forecast } = result.projection
+  const option = useMemo<EChartsOption>(() => {
+    const last = historical.at(-1)?.kgco2e
+    const leading: Array<number | null> = historical.map((point, i) => i === historical.length-1 ? point.kgco2e/1000 : null)
+    return {
+      color: ['#1756a4','#526578','#008078'],
+      grid: { left: 58, right: 20, top: 45, bottom: 35, containLabel: false },
+      legend: { top: 0, itemGap: 10, textStyle: { fontSize: 11 } },
+      tooltip: { trigger: 'axis', valueFormatter: (value) => value == null ? '—' : `${formatNumber(Number(value),2)} tCO₂e` },
+      xAxis: { type: 'category', data:[...historical, ...forecast].map((point) => point.period), axisLabel:{ hideOverlap:true } },
+      yAxis: { type: 'value', min:0, name:'tCO₂e', splitLine:{ lineStyle:{ color:'#e8eef5' } } },
+      series: [
+        { name:'历史快照', type:'line', showSymbol: historical.length <= 2, data:[...historical.map((point) => point.kgco2e/1000), ...forecast.map(() => null)] },
+        { name:'基准外推', type:'line', showSymbol:false, data:[...leading, ...forecast.map((point) => point.baseline_kgco2e/1000)], lineStyle:{ type:'dashed' } },
+        { name:'情景外推', type:'line', showSymbol:false, data:[...leading, ...forecast.map((point) => point.scenario_kgco2e/1000)], areaStyle:{opacity:.1} },
+      ].filter((_, i) => i===0 || (last !== undefined && forecast.length>0)) as EChartsOption['series'],
+    }
+  }, [historical, forecast])
+  if (!historical.length) return <SwissEmpty title="当前基线缺少单月历史" description="选用单月核算快照查看月度轨迹。" />
+  return <BaseChart option={option} height={285} ariaLabel="历史排放、基准外推和调整后的情景外推" />
 }
 
-/** 减排情景：运行情景、查看结果与情景历史。 */
-export default function ScenarioTab({ companyId, canWrite }: ScenarioTabProps) {
+const columns = [
+  { key:'name', title:'情景' },
+  { key:'baseline', title:'基线' },
+  { key:'power', title:'外购电力降幅' },
+  { key:'purchase', title:'采购降幅' },
+  { key:'reduction', title:'预计减排' },
+  { key:'roi', title:'累计现金回报率' },
+  { key:'action', title:'操作' },
+]
+
+export default function ScenarioTab({ companyId, canWrite }: { companyId: number; canWrite: boolean }) {
+  const [search] = useSearchParams()
+  const [runId, setRunId] = useState(search.get('run') || '')
+  const [runs, setRuns] = useState<CalculationRunSummary[]>([])
   const [scenarios, setScenarios] = useState<ScenarioRecord[]>([])
-  const [listLoading, setListLoading] = useState(true)
-  const [listError, setListError] = useState<string | null>(null)
-  const [listToken, setListToken] = useState(0)
-
-  const [baselines, setBaselines] = useState<CalculationRunSummary[]>([])
-  const [baselinesLoading, setBaselinesLoading] = useState(true)
-  const [baselinesError, setBaselinesError] = useState<string | null>(null)
-
-  const [scenarioName, setScenarioName] = useState('节电情景')
-  const [electricityRate, setElectricityRate] = useState('0.10')
-  const [procurementRate, setProcurementRate] = useState('0')
-  const [baselineRunId, setBaselineRunId] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [warnings, setWarnings] = useState<string[]>([])
-  const [lastResult, setLastResult] = useState<ScenarioResultData | null>(null)
-
-  const reloadList = useCallback(() => {
-    setListToken((token) => token + 1)
-  }, [])
-
-  useEffect(() => {
-    // 切换企业后，上一次情景结果不再属于当前企业
-    setLastResult(null)
-    setSubmitError(null)
-    setWarnings([])
-  }, [companyId])
+  const [loadError,setLoadError] = useState('')
+  const [rates, setRates] = useState<ScenarioRates>({ electricity_saving_rate:.14, electricity_substitution_rate:0, procurement_reduction_rate:.08 })
+  const [finance, setFinance] = useState<ScenarioFinance>(startingFinance)
+  const [draftName, setDraftName] = useState('设备节电与采购优化')
+  const [horizon, setHorizon] = useState(6)
+  const [result, setResult] = useState<ScenarioPreviewData | null>(null)
+  const [calculating, setCalculating] = useState(false)
+  const [previewError,setPreviewError] = useState('')
+  const [saving,setSaving] = useState(false)
+  const [notice,setNotice] = useState('')
 
   useEffect(() => {
     let active = true
-    setListLoading(true)
-    setListError(null)
-    simulatorApi
-      .listScenarios(companyId)
-      .then((list) => {
-        if (active) setScenarios(list)
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setScenarios([])
-          setListError(errorMessage(error))
-        }
-      })
-      .finally(() => {
-        if (active) setListLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [companyId, listToken])
-
-  useEffect(() => {
-    let active = true
-    setBaselinesLoading(true)
-    setBaselinesError(null)
-    calculationsApi
-      .listRuns({ company_id: companyId, operation: 'enterprise' })
-      .then((runs) => {
+    void Promise.all([calculationsApi.listRuns({ company_id:companyId, operation:'enterprise' }), simulatorApi.listScenarios(companyId)])
+      .then(([runs, saved]) => {
         if (!active) return
-        setBaselines(runs.filter((run) => run.status === 'success'))
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setBaselines([])
-          setBaselinesError(errorMessage(error))
-        }
-      })
-      .finally(() => {
-        if (active) setBaselinesLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
+        setRuns(runs.filter((run) => run.status==='success'))
+        setScenarios(saved)
+      }).catch((error) => { if (active) setLoadError(errorMessage(error)) })
+    return () => { active = false }
   }, [companyId])
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const baseline = runId || runs[0]?.run_id
+  const payload = useMemo(() => baseline ? ({
+    company_id:companyId, baseline_run_id:baseline, ...rates, finance, forecast_months:horizon,
+  }) : null, [companyId,baseline,rates,finance,horizon])
+
+  useEffect(() => {
+    if (!payload) return
+    if (financeFields.some(({key,min,max}) => {
+      const value=finance[key]
+      return value == null || !Number.isFinite(value) || value<min || value>max || (key==='project_life' && !Number.isInteger(value))
+    })) {
+      setResult(null)
+      setPreviewError('请填写允许范围内的投资参数。')
+      setCalculating(false)
+      return
+    }
+    const controller = new AbortController()
+    setPreviewError('')
+    setCalculating(true)
+    const timer = window.setTimeout(() => {
+      void simulatorApi.previewScenario(payload, controller.signal).then((response) => {
+        if (controller.signal.aborted) return
+        if (response.success) setResult(response.data)
+        else {
+          setResult(null)
+          setPreviewError(response.warnings?.join('。') || '当前基线无法用于减排预演。')
+        }
+      }).catch((error) => {
+        if (!controller.signal.aborted) {
+          setResult(null)
+          setPreviewError(errorMessage(error))
+        }
+      }).finally(() => { if (!controller.signal.aborted) setCalculating(false) })
+    }, 320)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [payload,finance])
+
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (submitting || !canWrite) return
-
-    const errors: FieldErrors = {}
-    if (!scenarioName.trim()) errors.name = '请填写情景名称'
-    const electricity = Number(electricityRate)
-    if (
-      electricityRate.trim() === '' ||
-      !Number.isFinite(electricity) ||
-      electricity < 0 ||
-      electricity > 1
-    ) {
-      errors.electricity = '节电比例需在 0—1 之间'
-    }
-    const procurement = Number(procurementRate)
-    if (
-      procurementRate.trim() === '' ||
-      !Number.isFinite(procurement) ||
-      procurement < 0 ||
-      procurement > 1
-    ) {
-      errors.procurement = '采购降幅需在 0—1 之间'
-    }
-
-    setFieldErrors(errors)
-    setSubmitError(null)
-    setWarnings([])
-    if (Object.keys(errors).length > 0) return
-
-    setSubmitting(true)
+    if (!canWrite || !payload || !draftName.trim() || calculating || saving || previewError) return
+    setSaving(true)
+    setNotice('')
     try {
-      const response = await simulatorApi.runScenario({
-        company_id: companyId,
-        scenario_name: scenarioName.trim(),
-        electricity_saving_rate: electricity,
-        procurement_reduction_rate: procurement,
-        ...(baselineRunId ? { baseline_run_id: baselineRunId } : {}),
-      })
-
-      if (response.status === 'success') {
-        setLastResult(response.data)
-        const nextWarnings = visibleWarnings(response.warnings)
-        setWarnings(nextWarnings)
-        reloadList()
-        return
-      }
-
-      setLastResult(null)
-      const nextWarnings = visibleWarnings(response.warnings)
-      setWarnings(nextWarnings)
-      setSubmitError(
-        nextWarnings.length > 0
-          ? '情景运行未完成，请查看下方提示'
-          : '情景运行未完成，后端未返回更多信息',
-      )
-    } catch (error) {
-      setLastResult(null)
-      setSubmitError(errorMessage(error))
-    } finally {
-      setSubmitting(false)
-    }
+      const response = await simulatorApi.runScenario({ ...payload, scenario_name:draftName.trim() })
+      if (!response.success) throw new Error(response.warnings?.join('。') || '情景未保存')
+      setNotice('情景与投资假设已保存。')
+      setScenarios(await simulatorApi.listScenarios(companyId))
+    } catch (error) { setNotice(errorMessage(error)) }
+    finally { setSaving(false) }
   }
 
-  const scenarioRows = scenarios.map<Record<string, ReactNode>>((scenario) => ({
-    id: scenario.scenario_id,
-    scenarioId: <span className="sim-code">{scenario.scenario_id}</span>,
-    name: scenario.scenario_name,
-    baseline: scenario.baseline_run_id ? (
-      <span className="sim-code">{scenario.baseline_run_id}</span>
-    ) : (
-      '当前记录'
-    ),
-    electricity: formatPercent(scenario.electricity_saving_rate),
-    procurement: formatPercent(scenario.procurement_reduction_rate),
-    baselineTotal: formatEmission(scenario.baseline_total_kgco2e),
-    scenarioTotal: formatEmission(scenario.scenario_total_kgco2e),
-    reduction: formatEmission(scenario.reduction_kgco2e),
-    reductionRate: (
-      <span className="sim-rate">{formatPercent(scenario.reduction_rate)}</span>
-    ),
+  function loadScenario(row: ScenarioRecord) {
+    setRunId(row.baseline_run_id && runs.some((run) => run.run_id===row.baseline_run_id) ? row.baseline_run_id : '')
+    setRates(row.assumptions ?? { electricity_saving_rate:row.electricity_saving_rate, electricity_substitution_rate:0, procurement_reduction_rate:row.procurement_reduction_rate })
+    if (row.roi) setFinance({
+      capex:row.roi.capex, annual_saving:row.roi.annual_saving, annual_opex:row.roi.annual_opex,
+      carbon_price:row.roi.carbon_price ?? 0, project_life:row.roi.project_life, discount_rate:row.roi.discount_rate,
+    })
+    setDraftName(row.scenario_name)
+  }
+
+  const roi=result?.roi
+  const rows=scenarios.map((row) => ({
+    key:row.scenario_id,
+    name:row.scenario_name,
+    baseline:row.baseline_run_id ? <Link to={`/dashboard?run=${row.baseline_run_id}`}>{row.baseline_run_id}</Link> : '当前记录',
+    power:formatPercent(row.electricity_saving_rate),
+    purchase:formatPercent(row.procurement_reduction_rate),
+    reduction:row.reduction_kgco2e == null ? '—' : `${formatEmission(row.reduction_kgco2e)} kgCO₂e`,
+    roi:formatPercent(row.roi?.roi),
+    action:<button type="button" className="sim-restore" onClick={() => loadScenario(row)}>载入参数</button>,
   }))
 
   return (
     <div className="scenario-tab">
+      {loadError && <p className="sim-error" role="alert">{loadError}</p>}
       <div className="sim-grid">
-        <SwissSection kicker="运行情景" title="参数" extra={<span>比例 0—1</span>}>
-          <form className="sim-form" onSubmit={handleSubmit} noValidate>
-            <SwissField
-              label="情景名称"
-              htmlFor="sim-scenario-name"
-              required
-              error={fieldErrors.name}
-            >
-              <SwissInput
-                id="sim-scenario-name"
-                value={scenarioName}
-                disabled={submitting || !canWrite}
-                placeholder="例如 节电 10%"
-                onChange={(event) => {
-                  setScenarioName(event.target.value)
-                  if (fieldErrors.name) {
-                    setFieldErrors((current) => ({ ...current, name: '' }))
-                  }
-                }}
-              />
-            </SwissField>
-
-            <div className="sim-form__pair">
-              <SwissField
-                label="节电比例"
-                htmlFor="sim-electricity"
-                required
-                error={fieldErrors.electricity}
-                hint={rateHint(electricityRate)}
-              >
-                <SwissInput
-                  id="sim-electricity"
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={electricityRate}
-                  disabled={submitting || !canWrite}
-                  onChange={(event) => {
-                    setElectricityRate(event.target.value)
-                    if (fieldErrors.electricity) {
-                      setFieldErrors((current) => ({ ...current, electricity: '' }))
-                    }
-                  }}
-                />
-              </SwissField>
-
-              <SwissField
-                label="采购降幅"
-                htmlFor="sim-procurement"
-                required
-                error={fieldErrors.procurement}
-                hint={rateHint(procurementRate)}
-              >
-                <SwissInput
-                  id="sim-procurement"
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={procurementRate}
-                  disabled={submitting || !canWrite}
-                  onChange={(event) => {
-                    setProcurementRate(event.target.value)
-                    if (fieldErrors.procurement) {
-                      setFieldErrors((current) => ({ ...current, procurement: '' }))
-                    }
-                  }}
-                />
-              </SwissField>
-            </div>
-
-            <SwissField
-              label="基线运行"
-              htmlFor="sim-baseline"
-              hint="留空使用当前已确认记录；也可指定某次成功的企业核算"
-            >
-              <SwissSelect
-                id="sim-baseline"
-                value={baselineRunId}
-                disabled={submitting || !canWrite || Boolean(baselinesError)}
-                onChange={(event) => setBaselineRunId(event.target.value)}
-              >
-                <option value="">
-                  {baselinesLoading ? '正在加载运行记录…' : '当前已确认记录'}
-                </option>
-                {baselines.map((run) => (
-                  <option key={run.run_id} value={run.run_id}>
-                    {run.run_id} · {formatDateTime(run.created_at)} ·{' '}
-                    {formatEmission(run.total_kgco2e)} kgCO₂e
-                  </option>
-                ))}
-              </SwissSelect>
-            </SwissField>
-
-            {baselinesError ? (
-              <div className="sim-inline-error" role="alert">
-                基线运行列表加载失败：{baselinesError}
+        <SwissSection title="情景参数" extra="选择基线后拖动滑块">
+          <form className="sim-form" onSubmit={save}>
+            <label>核算基线
+              <select value={runId} onChange={(event) => {setResult(null);setRunId(event.target.value)}}>
+                <option value="">最近一次成功核算</option>
+                {runs.map((run) => <option key={run.run_id} value={run.run_id}>{run.run_id} · {formatEmission(run.total_kgco2e)} kgCO₂e</option>)}
+              </select>
+            </label>
+            {controls.map(({key,name,help,aria}) => (
+              <div className="sim-measure" key={key}>
+                <label htmlFor={key}>{name}<output>{Math.round(rates[key]*100)}%</output></label>
+                <input id={key} aria-label={aria} type="range" min={0} max={100} step={1} value={Math.round(rates[key]*100)}
+                  onChange={(event) => setRates({...rates,[key]:event.target.valueAsNumber/100})} />
+                <small>{help}</small>
               </div>
-            ) : null}
-
-            {!canWrite ? (
-              <p className="sim-form__note">审计角色为只读，不能运行新的减排情景。</p>
-            ) : null}
-
-            {submitError ? (
-              <div className="sim-form__error" role="alert">
-                {submitError}
+            ))}
+            <details className="sim-finance">
+              <summary>投资假设 <span>{formatAmount(finance.capex)} · {finance.project_life} 年</span></summary>
+              <p>初始值为可编辑示例。碳价默认为零。</p>
+              <div className="sim-finance__fields">
+                {financeFields.map(({key,name,min,max,step}) => <label key={key}>{name}
+                  <input min={min} max={max} step={step} type="number" value={Number.isNaN(finance[key]) ? '' : finance[key]}
+                    onChange={(event) => setFinance({...finance,[key]:event.target.valueAsNumber})} />
+                </label>)}
               </div>
-            ) : null}
-
-            {warnings.length > 0 ? (
-              <ul className="sim-form__warnings">
-                {warnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
-            ) : null}
-
-            <div className="sim-form__actions">
-              <SwissButton type="submit" loading={submitting} disabled={!canWrite}>
-                运行情景
-              </SwissButton>
-              <span className="sim-form__note">按基线排放与两类减排比例测算</span>
-            </div>
+            </details>
+            {canWrite && <label>情景名称
+              <input value={draftName} maxLength={90} onChange={(event) => setDraftName(event.target.value)} required />
+            </label>}
+            {canWrite && <SwissButton type="submit" loading={saving} disabled={!result || !!previewError || calculating}>保存情景</SwissButton>}
+            {notice && <p className="sim-notice" role="status">{notice}</p>}
           </form>
         </SwissSection>
-
-        <SwissSection
-          kicker="本次结果"
-          title="情景对比"
-          extra={lastResult ? <span>{lastResult.scenario_id}</span> : undefined}
-        >
-          {lastResult ? (
-            <div className="sim-result">
-              <div className="sim-stats">
-                <SwissStat
-                  label="基准排放"
-                  value={formatEmission(lastResult.baseline_total_kgco2e)}
-                  unit="kgCO₂e"
-                />
-                <SwissStat
-                  label="情景排放"
-                  value={formatEmission(lastResult.scenario_total_kgco2e)}
-                  unit="kgCO₂e"
-                  tone="accent"
-                />
-                <SwissStat
-                  label="减排量"
-                  value={formatEmission(lastResult.reduction_kgco2e)}
-                  unit="kgCO₂e"
-                />
-                <SwissStat
-                  label="减排率"
-                  value={formatPercent(lastResult.reduction_rate)}
-                  tone={
-                    lastResult.reduction_rate > 0 ? 'accent' : 'default'
-                  }
-                />
+        <div className="sim-outcome">
+          <SwissSection title="排放与减排轨迹" extra={
+            <label className="sim-horizon">预测范围 <select value={horizon} onChange={(event) => setHorizon(Number(event.target.value))}>
+              <option value={6}>6 个月</option><option value={12}>12 个月</option>
+              <option value={24}>24 个月</option><option value={36}>36 个月</option>
+            </select></label>
+          }>
+            {previewError && <p className="sim-error" role="alert">{previewError}</p>}
+            {result && <div aria-busy={calculating}>
+              <div className="sim-comparison">
+                <div><span>基线排放</span><b>{formatNumber(result.baseline_total_kgco2e/1000)} tCO₂e</b></div>
+                <div><span>情景排放</span><b>{formatNumber(result.scenario_total_kgco2e/1000)} tCO₂e</b></div>
+                <dl><dt>预计减排</dt><dd>{formatNumber(result.reduction_kgco2e/1000)} t · {formatPercent(result.reduction_rate)}</dd></dl>
               </div>
-
-              <div className="sim-scope-list">
-                {(['scope1', 'scope2', 'scope3'] as const).map((scope) => (
-                  <div className="sim-scope-row" key={scope}>
-                    <span className="sim-scope-label">{scope.replace('scope', 'Scope ')}</span>
-                    <span className="sim-scope-values">
-                      <span>{formatEmission(lastResult.baseline_scope_breakdown[scope])}</span>
-                      <span className="sim-scope-arrow">→</span>
-                      <span className="sim-scope-after">
-                        {formatEmission(lastResult.scope_breakdown[scope])}
-                      </span>
-                      <span className="sim-scope-unit">kgCO₂e</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {lastResult.changed_records.length > 0 ? (
-                <p className="sim-result__note">
-                  影响记录 {lastResult.changed_records.length} 条。
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <SwissEmpty
-              title="尚未运行情景"
-              description="设置节电与采购降幅后运行，这里会显示基准与情景排放对比。"
-            />
-          )}
-        </SwissSection>
+              <PreviewChart result={result} />
+              <p className="sim-footnote">{result.projection.historical.length} 期历史 · {result.projection.forecast.length} 期外推
+                {calculating && ' · 正在重新核算'}。预测假定基线结构延续，保持范围 1 不变。绿电替代量仅调减范围 2 外购电力。</p>
+            </div>}
+            {!result && !previewError && (calculating ? <p role="status">后端正在预演…</p> :
+              <SwissEmpty title="请选择成功的企业核算基线" action={<Link to="/calculations">前往核算</Link>} />)}
+          </SwissSection>
+          {roi && <SwissSection title="投资回报仪表盘" extra="基于所填投资与费用假设">
+            <InvestmentOutcome roi={roi}/>
+            <p className="sim-footnote">{roi.carbon_income_included ? '已按 12 期外推减排量计入假设碳收益。' : '本次财务测算不计入碳收益。'}</p>
+          </SwissSection>}
+        </div>
       </div>
-
-      <SwissSection
-        kicker="情景历史"
-        title="已保存情景"
-        extra={<span>{listLoading ? '加载中' : `共 ${scenarios.length} 个情景`}</span>}
-      >
-        {listLoading ? (
-          <div className="sim-loading" role="status" aria-busy="true">
-            正在加载情景…
-          </div>
-        ) : listError ? (
-          <SwissError message={listError} onRetry={reloadList} />
-        ) : (
-          <SwissTable
-            columns={SCENARIO_COLUMNS}
-            rows={scenarioRows}
-            rowKey={(row) => String(row.id)}
-            empty="还没有情景记录"
-          />
-        )}
+      <SwissSection title="已保存方案" extra={`${scenarios.length} 项`}>
+        <SwissTable columns={columns} rows={rows} rowKey={(row) => String(row.key)} empty="尚未保存方案" />
       </SwissSection>
     </div>
   )

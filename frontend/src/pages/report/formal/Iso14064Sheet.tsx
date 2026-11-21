@@ -74,10 +74,19 @@ export default function Iso14064Sheet({ report, content }: Iso14064SheetProps) {
         <section className="formal-section">
           <h2>一、核算边界</h2>
           <p>{content.boundary ?? EMPTY_VALUE}</p>
+          {content.boundarySites.map((site) => <p key={site.entity+'-'+site.name}>{site.entity} · {site.name} · {formatNumber(site.share*100,2)}%</p>)}
+          {content.internalApproval ? (
+            <p>生成时已完成企业内部关账 · {content.internalApproval.period} 第 {content.internalApproval.revision} 版。企业声明边界：{content.internalApproval.boundary}</p>
+          ) : <p>该清单未标记为已关账。</p>}
         </section>
 
         <section className="formal-section">
           <h2>二、排放结果</h2>
+          {content.coverage.length > 0 && <details><summary>范围 3 覆盖情况</summary><ol>
+            {content.coverage.map((row) => <li key={row.category}>{({
+              included:'已纳入', unavailable:'数据缺失', not_applicable:'不适用', excluded:'说明排除',
+            } as Record<string,string>)[row.status]} · {row.rationale}</li>)}
+          </ol></details>}
           <table className="formal-table">
             <thead>
               <tr>

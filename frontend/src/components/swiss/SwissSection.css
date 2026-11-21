@@ -54,3 +54,14 @@
   min-width: 0;
   padding-top: 14px;
 }
+
+.swiss-section { margin-top: 18px; padding: 17px 20px 18px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-raised); }
+.swiss-section__kicker { display: none; }
+.swiss-section__kicker + .swiss-section__title { margin-top: 0; }
+.swiss-section__title { font-size: 16px; letter-spacing: 0; text-transform: none; }
+.swiss-section__extra { font-size: 12px; }
+.swiss-section__head { border-color: var(--rule-soft); }
+@media (max-width: 760px) {
+  .swiss-section { padding: 14px 12px; }
+  .swiss-section__head { gap: 8px; }
+}

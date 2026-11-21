@@ -118,3 +118,12 @@
     gap: 12px;
   }
 }
+
+.product-language { min-height: 40px; padding: 0 9px; border: 1px solid var(--rule); border-radius: 7px; color: var(--ink); background: var(--paper-raised); font: inherit; }
+.product-evidence-note { color: var(--muted); font-size: 12px; }
+.bom-factor-edit { background: transparent; border: 0; min-height: 32px; color: var(--accent); cursor: pointer; font: inherit; white-space: nowrap; }
+.bom-factor-edit:hover { text-decoration: underline; }
+.bom-factor-details { margin-top: 18px; }
+.bom-factor-details > div { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 9px; border-top: 1px solid var(--rule); padding: 9px 0; }
+.bom-factor-details dt { color: var(--muted); }
+.bom-factor-details dd { margin: 0; overflow-wrap: anywhere; }

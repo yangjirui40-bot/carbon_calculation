@@ -8,6 +8,7 @@ import './BomTable.css'
 
 type BomTableProps = {
   items: ProductBomLine[]
+  onSelect?: (item: ProductBomLine) => void
 }
 
 const COLUMNS: SwissTableColumn[] = [
@@ -21,7 +22,7 @@ const COLUMNS: SwissTableColumn[] = [
 ]
 
 /** BOM 明细：匹配类别 / 因子 / 置信度由 SBERT 匹配回写。 */
-export default function BomTable({ items }: BomTableProps) {
+export default function BomTable({ items, onSelect }: BomTableProps) {
   if (items.length === 0) {
     return (
       <div className="bom-table__empty" role="status">
@@ -30,10 +31,11 @@ export default function BomTable({ items }: BomTableProps) {
     )
   }
 
+  const columns = onSelect ? [...COLUMNS, { key: 'action', title: '复核' }] : COLUMNS
   const rows = items.map<Record<string, ReactNode>>((item) => ({
     id: item.bom_item_id,
     itemId: <span className="bom-code">{item.bom_item_id}</span>,
-    material: item.material_name,
+    material: <>{item.material_name}{item.assembly_path && <><br /><small>{item.assembly_path}</small></>}</>,
     amount: <span className="bom-num">{formatAmount(item.material_amount)}</span>,
     currency: item.currency || 'CNY',
     category: item.matched_category ? (
@@ -46,8 +48,9 @@ export default function BomTable({ items }: BomTableProps) {
     ) : (
       '—'
     ),
-    confidence: item.match_confidence === null ? '—' : formatConfidence(item.match_confidence),
+    confidence: item.match_confidence === null ? (item.matched_factor_id ? '已指定' : '—') : formatConfidence(item.match_confidence),
+    action: onSelect ? <button className="bom-factor-edit" type="button" onClick={() => onSelect(item)} aria-label={`复核 ${item.material_name} 因子`}>复核因子</button> : null,
   }))
 
-  return <SwissTable columns={COLUMNS} rows={rows} rowKey={(row) => String(row.id)} empty="暂无 BOM" />
+  return <SwissTable columns={columns} rows={rows} rowKey={(row) => String(row.id)} empty="暂无 BOM" />
 }

@@ -20,3 +20,7 @@ _piptmp/
 *.log
 _acl_recovery/
 deploy/
+
+.env.local
+.env.production
+*账号_勿公开.txt

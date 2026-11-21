@@ -4,6 +4,7 @@ import type {
   ROIRequestPayload,
   ROIResponse,
   ScenarioRecord,
+  ScenarioPreviewData,
   ScenarioResultData,
   ScenarioRunPayload,
   TrajectoryResponse,
@@ -39,5 +40,15 @@ export function getTrajectory(companyId: number) {
   return request<TrajectoryResponse>({
     url: `/api/v1/simulator/company/${companyId}/trajectory`,
     method: 'get',
+  })
+}
+
+
+export function previewScenario(payload: ScenarioRunPayload, signal?: AbortSignal) {
+  return request<EngineResponse<ScenarioPreviewData>>({
+    url: '/api/v1/simulator/preview',
+    method: 'post',
+    data: payload,
+    signal,
   })
 }

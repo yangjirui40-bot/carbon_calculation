@@ -1,23 +1,25 @@
-/* ============================================================
-   碳速算 · 瑞士设计系统色板（唯一来源）
-   依据：front_plan/15 §5.2、front_plan/design/tokens.css
-   规则：变量名与值不得改动；组件 CSS 只引用本文件变量和
-         tokens.css 语义变量，不写裸色值（transparent/currentColor 除外）。
-   ============================================================ */
-
 :root {
-  --paper: #f1eee5;
-  --ink: #14211c;
-  --muted: #6d726a;
-  --rule: #d3ccbd;
-  --rule-soft: #e2dccf;
-  --accent: #0e3b2e;
-  --accent-ink: #e8ffd0;
-  --lime: #c9f45b;
-  --fail: #a33a2a;
-  --warn: #9a5b13;
-  --s1: #1f4e79;
-  --s2: #14532d;
-  --s3: #b45309;
-  --paper-raised: #f7f4ec;
+  --paper: #f4f7fb;
+  --paper-raised: #fff;
+  --ink: #132638;
+  --muted: #526578;
+  --rule: #d9e2ed;
+  --rule-soft: #e8eef5;
+  --accent: #1756a4;
+  --accent-ink: #fff;
+  --accent-soft: #eaf2ff;
+  --accent-border: #d5e5fb;
+  --focus: #3179d4;
+  --navy: #10243b;
+  --navy-raised: #1a3551;
+  --navy-border: #3d5974;
+  --on-navy: #f3f8ff;
+  --on-navy-muted: #bbcee2;
+  --signal: #84e0d4;
+  --lime: var(--signal);
+  --fail: #a6343f;
+  --warn: #8b550e;
+  --s1: #2758ba;
+  --s2: #008078;
+  --s3: #7556ba;
 }

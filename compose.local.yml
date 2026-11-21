@@ -1,0 +1,37 @@
+name: carbonspeed-local
+services:
+  db:
+    image: ${POSTGRES_IMAGE:-adc-clinic-postgres:20261111}
+    environment:
+      POSTGRES_USER: carbonspeed
+      POSTGRES_DB: carbonspeed
+      POSTGRES_PASSWORD: ${LOCAL_POSTGRES_PASSWORD:?Run scripts/init_local_env.py first}
+    volumes: [database:/var/lib/postgresql]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U carbonspeed -d carbonspeed]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+  backend:
+    image: carbonspeed-backend:20261120-bi-decisions-r2
+    build: .
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgresql+psycopg2://carbonspeed:${LOCAL_POSTGRES_PASSWORD}@db:5432/carbonspeed
+      DB_TENANT_ISOLATION_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+    ports: ['127.0.0.1:18083:8000']
+    volumes:
+      - storage:/app/storage
+      - ./models_cache:/app/models_cache
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  database:
+  storage:

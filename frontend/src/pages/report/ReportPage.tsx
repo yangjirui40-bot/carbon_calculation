@@ -11,6 +11,7 @@ import ReportLoading from './ReportLoading'
 import Iso14064Sheet from './formal/Iso14064Sheet'
 import PcfSheet from './formal/PcfSheet'
 import ReportToolbar from './formal/ReportToolbar'
+import DeliveryPanel from './DeliveryPanel'
 import './ReportPage.css'
 
 /** 报告详情：/reports/:reportNo，按 ISO14064 / PCF 渲染正式报告纸面 */
@@ -183,6 +184,21 @@ export default function ReportPage() {
         onPrint={() => window.print()}
         onDownload={(format) => void handleDownload(format)}
       />
+
+      {isIso && <DeliveryPanel key={report.report_no} number={report.report_no}/>}
+      <aside className="formal-archive" aria-label="报告归档">
+        <strong>报告归档</strong>
+        {report.artifacts?.length ? (
+          <dl>
+            {report.artifacts.map((artifact) => (
+              <div key={artifact.format}>
+                <dt>{artifact.format.toUpperCase()} · SHA-256</dt>
+                <dd><code>{artifact.sha256}</code></dd>
+              </div>
+            ))}
+          </dl>
+        ) : <p>历史报告。下载文件按已保存的报告内容生成。</p>}
+      </aside>
 
       <div className="formal-pages">
         {isIso ? (

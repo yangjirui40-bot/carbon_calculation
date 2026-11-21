@@ -20,14 +20,16 @@ def _load_engine():
     if _engine is not None:
         return _engine
     if settings.OCR_ENGINE == "mock":
+        if not settings.DEMO_DATA_ENABLED:
+            raise RuntimeError("生产环境禁止模拟OCR")
         _engine = MockEngine()
         return _engine
     try:
         from rapidocr_onnxruntime import RapidOCR
 
         _engine = RapidOCREngine(RapidOCR())
-    except Exception:  # noqa: BLE001 - 依赖未安装时回退到模拟引擎
-        _engine = MockEngine()
+    except Exception as exc:
+        raise RuntimeError("真实OCR引擎不可用，请联系管理员检查依赖；没有生成或代入演示识别结果") from exc
     return _engine
 
 
@@ -40,22 +42,19 @@ class RapidOCREngine:
         self._engine = engine
 
     def recognize(self, image_bytes: bytes) -> dict:
-        from PIL import Image
-
-        img = np.asarray(Image.open(io.BytesIO(image_bytes)).convert("RGB"))
-        result, _elapse = self._engine(img)
-        words = []
-        for item in result or []:
-            box, text, score = item[0], item[1], float(item[2])
-            xs = [p[0] for p in box]
-            ys = [p[1] for p in box]
-            words.append(
-                {
-                    "text": str(text),
-                    "box": [int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys))],
-                    "confidence": round(score, 4),
-                }
-            )
+        from ..document_media import document_pages
+        pages = document_pages(image_bytes)
+        words, offset = [], 0
+        try:
+            for page_no, page in enumerate(pages, start=1):
+                result, _elapse = self._engine(np.asarray(page))
+                for item in result or []:
+                    box, text, score = item[0], item[1], float(item[2])
+                    xs, ys = [p[0] for p in box], [p[1] for p in box]
+                    words.append({"text": str(text), "box": [int(min(xs)), int(min(ys))+offset, int(max(xs)), int(max(ys))+offset], "confidence": round(score, 4), "page": page_no})
+                offset += page.height
+        finally:
+            for page in pages: page.close()
         return {"engine": self.name, "words": words}
 
 

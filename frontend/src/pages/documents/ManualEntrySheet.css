@@ -1,13 +1,5 @@
 .manual-sheet-layer {
-  --paper: #f1eee5;
   --sheet: #f7f4ea;
-  --ink: #14211c;
-  --muted: #6d726a;
-  --rule: #d3ccbd;
-  --rule-soft: #e2dccf;
-  --accent: #0e3b2e;
-  --lime: #c9f45b;
-  --fail: #a33a2a;
 
   position: fixed;
   inset: 0;
@@ -17,7 +9,7 @@
   justify-content: center;
   padding: 30px;
   overflow: auto;
-  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family-base);
 }
 
 .manual-sheet-scrim {

@@ -17,7 +17,7 @@ export default function RecentRuns({ runs }: RecentRunsProps) {
   const rows = runs.slice(0, 5)
 
   return (
-    <SwissSection kicker="History" title="最近核算" extra="最新 5 条">
+    <SwissSection kicker="History" title="最近企业核算" extra="最新 5 条">
       {rows.length === 0 ? (
         <SwissEmpty
           title="还没有核算记录"

@@ -36,22 +36,44 @@ def factor_to_dict(factor) -> dict[str, Any]:
         "unit": factor.unit,
         "version": factor.version,
         "origin": factor.origin or "",
+        "price_basis": factor.price_basis,
         "is_demo": bool(factor.is_demo),
         "uncertainty_pct": factor.uncertainty_pct,
     }
 
 
-def load_factors_from_db(db, factor_set: str | None = None) -> dict[str, dict[str, Any]]:
+def factor_rows(db, company_id=None, *, include_private=False):
+    from sqlalchemy import or_
     from ..models import EmissionFactor
+    from ..models.company_factors import CompanyFactorVersion
+    query = db.query(EmissionFactor, CompanyFactorVersion).outerjoin(
+        CompanyFactorVersion, CompanyFactorVersion.emission_factor_id == EmissionFactor.id
+    )
+    if not include_private:
+        if company_id is None:
+            query = query.filter(CompanyFactorVersion.id.is_(None))
+        else:
+            query = query.filter(or_(CompanyFactorVersion.id.is_(None), CompanyFactorVersion.tenant_id==company_id))
+    return query
 
-    return {f.factor_id: factor_to_dict(f) for f in db.query(EmissionFactor).all()}
+
+def load_factors_from_db(db, factor_set: str | None = None, *, company_id=None, include_private=False) -> dict[str, dict[str, Any]]:
+    output = {}
+    for factor, version in factor_rows(db, company_id, include_private=include_private):
+        values = factor_to_dict(factor)
+        if version:
+            values.update(valid_from=version.valid_from, valid_to=version.valid_to)
+        output[factor.factor_id] = values
+    return output
 
 
-def apply_factor_set(records: list[dict], factor_set: str) -> tuple[list[dict], list[str]]:
+def apply_factor_set(records: list[dict], factor_set: str, *, db=None) -> tuple[list[dict], list[str]]:
     """按因子集重映射记录因子（只替换该集合覆盖的类别），返回 (记录, 警告)。"""
     from .factor_library import FACTOR_SETS
 
-    mapping = FACTOR_SETS.get(factor_set)
+    from .research_catalog import mappings
+    library = mappings(db) if db is not None else FACTOR_SETS
+    mapping = library.get(factor_set)
     if not mapping:
         raise ValueError(f"未知因子集：{factor_set}；可选：{', '.join(FACTOR_SETS)}")
     out = []
@@ -71,11 +93,14 @@ def apply_factor_set(records: list[dict], factor_set: str) -> tuple[list[dict], 
 
 def records_to_algo(records) -> list[dict[str, Any]]:
     """ORM BusinessRecord 列表 -> 算法 records 列表。"""
+    from .activity import activity_fields
+
     out = []
     for r in records:
         out.append(
             {
                 "id": r.record_no,
+                "document_id": r.document_id,
                 "company_id": r.company_id,
                 "period": r.period,
                 "category": r.category,
@@ -86,6 +111,12 @@ def records_to_algo(records) -> list[dict[str, Any]]:
                 "currency": r.currency,
                 "factor_id": r.factor_id,
                 "review_status": r.review_status,
+                **activity_fields(r),
+                **({
+                    "workshop": r.dimensions.workshop,
+                    "production_line": r.dimensions.production_line,
+                    "scope3_category": r.dimensions.scope3_category,
+                } if r.dimensions else {}),
             }
         )
     return out

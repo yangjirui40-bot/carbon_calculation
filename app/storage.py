@@ -15,7 +15,7 @@ class LocalStorage:
 
     def _path(self, key: str) -> Path:
         p = (self.root / key).resolve()
-        if not str(p).startswith(str(self.root.resolve())):
+        if not p.is_relative_to(self.root.resolve()):
             raise ValueError("非法存储键")
         return p
 

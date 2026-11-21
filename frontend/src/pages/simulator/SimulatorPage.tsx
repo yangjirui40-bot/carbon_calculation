@@ -12,9 +12,9 @@ import TrajectoryTab from './swiss/TrajectoryTab'
 import './SimulatorPage.css'
 
 const TABS = [
-  { key: 'scenarios', label: '情景' },
-  { key: 'trajectory', label: '轨迹' },
-  { key: 'roi', label: 'ROI 测算' },
+  { key: 'scenarios', label: '减排工作台' },
+  { key: 'trajectory', label: '已保存方案轨迹' },
+  { key: 'roi', label: '独立财务测算' },
 ]
 
 /** 减排路径模拟器：情景运行、轨迹对比与投资回报。 */
@@ -61,7 +61,7 @@ export default function SimulatorPage() {
       <div className="simulator-body">
         {activeKey === 'scenarios' ? (
           effectiveCompanyId !== null ? (
-            <ScenarioTab companyId={effectiveCompanyId} canWrite={canWrite} />
+            <ScenarioTab key={effectiveCompanyId} companyId={effectiveCompanyId} canWrite={canWrite} />
           ) : (
             <SwissEmpty
               title={pickerVisible ? '请选择企业' : '当前账号未绑定企业'}

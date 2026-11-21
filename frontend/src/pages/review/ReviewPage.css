@@ -1,19 +1,10 @@
 /* 数据核对 · 瑞士风格方案 3 · 校对工作台 */
 
 .review-swiss {
-  --paper: #f1eee5;
-  --ink: #14211c;
-  --muted: #6d726a;
-  --rule: #d3ccbd;
-  --rule-soft: #e2dccf;
-  --accent: #0e3b2e;
-  --lime: #c9f45b;
-  --warn: #9a5b13;
-  --fail: #a33a2a;
 
   background: var(--paper);
   color: var(--ink);
-  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family-base);
   -webkit-font-smoothing: antialiased;
 }
 

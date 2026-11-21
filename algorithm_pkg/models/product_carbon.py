@@ -30,6 +30,7 @@ def calculate_product_carbon(
     seen_ids = set()
     item_results = []
     total = 0.0
+    co2_only = set()
 
     for item in bom_items:
         bom_id = item.get("bom_item_id")
@@ -52,8 +53,11 @@ def calculate_product_carbon(
             raise ProductCarbonError(str(exc)) from exc
         if factor.get("category") != category:
             raise ProductCarbonError(f"BOM 明细 {bom_id} 的因子类别不匹配")
-        if factor.get("unit") != "kgCO2e/CNY":
-            raise ProductCarbonError(f"BOM 明细 {bom_id} 因子量纲必须为 kgCO2e/CNY")
+        factor_unit = factor.get("unit")
+        if factor_unit not in ("kgCO2e/CNY", "kgCO2/CNY"):
+            raise ProductCarbonError(f"BOM 明细 {bom_id} 因子量纲必须为 kgCO2e/CNY 或 kgCO2/CNY")
+        if factor_unit == "kgCO2/CNY":
+            co2_only.add(factor_id)
 
         amount = _number(item.get("material_amount"), f"{bom_id}.material_amount")
         if item.get("currency", "CNY") != "CNY":
@@ -63,10 +67,12 @@ def calculate_product_carbon(
         item_results.append({
             "bom_item_id": bom_id,
             "material_name": item.get("material_name"),
+            **({"assembly_path": item["assembly_path"]} if item.get("assembly_path") else {}),
             "category": category,
             "material_amount_cny": amount,
             "factor_id": factor_id,
             "factor_version": factor["version"],
+            "factor_unit": factor_unit,
             "factor_kgco2e_per_cny": float(factor["value"]),
             "emissions_kgco2e": round(emissions, 8),
             "is_demo": bool(factor.get("is_demo", True)),
@@ -85,9 +91,11 @@ def calculate_product_carbon(
         "items": item_results,
         "factor_versions": sorted({x["factor_version"] for x in item_results}),
         "boundary": "BOM采购上游排放估算；不包含完整生命周期各阶段",
-        "is_demo": True,
+        "is_demo": any(item["is_demo"] for item in item_results),
         "warnings": [
             "结果仅覆盖当前BOM明细对应的采购上游排放估算。",
-            "该结果是独立产品核算，不得直接加到企业Scope 1/2/3总账。"
+            "该结果是独立产品核算，不得直接加到企业Scope 1/2/3总账。",
+            *[f"研究因子 {factor_id} 仅覆盖 CO₂，按 CO₂ 的当量系数 1 汇总，其他温室气体未纳入。"
+              for factor_id in sorted(co2_only)],
         ],
     }

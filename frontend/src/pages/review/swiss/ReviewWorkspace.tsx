@@ -16,6 +16,7 @@ import {
 } from '../../documents/meta'
 import ReviewAccountingPanel from './ReviewAccountingPanel'
 import ReviewFieldsPanel from './ReviewFieldsPanel'
+import ReviewSourcePanel from './ReviewSourcePanel'
 import ReviewPreviewPanel from './ReviewPreviewPanel'
 import ReviewSidePanel from './ReviewSidePanel'
 import './ReviewWorkspace.css'
@@ -27,6 +28,9 @@ type Outcome = {
   duplicateHint: string | null
   verifyHint: string | null
 }
+
+import LocationFields from '../../organization/LocationFields'
+import type { RecordClassification } from '../../../api/types'
 
 type ReviewWorkspaceProps = {
   document: SourceDocument
@@ -53,6 +57,7 @@ export default function ReviewWorkspace({ document: initialDocument }: ReviewWor
   )
   const fieldKeys = useMemo(() => orderedFieldKeys(extraction.fields), [extraction.fields])
 
+  const [activeField, setActiveField] = useState<string | null>(null)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
     const initial = parseExtraction(
       initialDocument.extracted_fields,
@@ -73,6 +78,7 @@ export default function ReviewWorkspace({ document: initialDocument }: ReviewWor
   const [amount, setAmount] = useState(stringOf(hint.amount))
   const [factorId, setFactorId] = useState(hint.factor_id ?? '')
   const [note, setNote] = useState('')
+  const [locationFields, setLocationFields] = useState<RecordClassification>({})
 
   /** 表单初始值：与初始值相同的字段不提交，让后端用修订后的识别结果重算 record_hint */
   const initialForm = useMemo(
@@ -263,6 +269,7 @@ export default function ReviewWorkspace({ document: initialDocument }: ReviewWor
         unit: unit.trim() !== initialForm.unit ? unit.trim() || undefined : undefined,
         amount: amount.trim() !== initialForm.amount ? amountValue : undefined,
         currency: 'CNY',
+        site_id: locationFields.site_id, org_unit_id: locationFields.org_unit_id,
         review_status: 'confirmed',
         fields_override: Object.keys(overrides).length > 0 ? overrides : undefined,
         note: note.trim() || undefined,
@@ -321,12 +328,13 @@ export default function ReviewWorkspace({ document: initialDocument }: ReviewWor
 
   if (terminal) {
     return (
-      <ReviewOutcome
-        document={doc}
-        outcome={terminal}
-        fieldCount={fieldKeys.length}
-        previouslyConfirmed={!outcome && initialDocument.review_status === 'confirmed'}
-      />
+      <>
+        <ReviewOutcome document={doc} outcome={terminal} fieldCount={fieldKeys.length} previouslyConfirmed={!outcome && initialDocument.review_status === 'confirmed'} />
+        <div className="review-grid review-grid--evidence">
+          <div><ReviewSourcePanel document={doc} activeField={activeField} value={activeField ? fieldValues[activeField] ?? '' : ''} /><ReviewPreviewPanel document={doc} correctionCount={correctionCount} verifyDetail={verifyDetail} /></div>
+          <ReviewFieldsPanel fieldKeys={fieldKeys} values={fieldValues} original={extraction.fields} corrections={correctionNotes} onChange={() => undefined} onFocus={setActiveField} readOnly />
+        </div>
+      </>
     )
   }
 
@@ -366,14 +374,18 @@ export default function ReviewWorkspace({ document: initialDocument }: ReviewWor
       ) : null}
 
       <div className="review-grid">
+        <div>
+        <ReviewSourcePanel document={doc} activeField={activeField} value={activeField ? fieldValues[activeField] ?? "" : ""} />
         <ReviewPreviewPanel
           document={doc}
           correctionCount={correctionCount}
           verifyDetail={verifyDetail}
         />
+        </div>
 
         <div className="review-center">
           <ReviewFieldsPanel
+            onFocus={setActiveField}
             fieldKeys={fieldKeys}
             values={fieldValues}
             original={extraction.fields}
@@ -409,6 +421,7 @@ export default function ReviewWorkspace({ document: initialDocument }: ReviewWor
           />
         </div>
 
+        <LocationFields companyId={doc.company_id} prefix="receipt-location" value={locationFields} onChange={setLocationFields}/>
         <ReviewSidePanel
           confidence={doc.overall_confidence}
           correctionCount={correctionCount}

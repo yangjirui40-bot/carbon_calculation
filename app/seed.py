@@ -84,7 +84,7 @@ def _seed_demo_users(db, company: Company) -> None:
         dict(username="enterprise", email="enterprise@carbonspeed.local", password="enterprise123",
              role="enterprise", company_id=company.id, supplier_id=None),
         dict(username="auditor", email="auditor@carbonspeed.local", password="auditor123",
-             role="auditor", company_id=None, supplier_id=None),
+             role="auditor", company_id=company.id, supplier_id=None),
         dict(username="supplier", email="supplier@carbonspeed.local", password="supplier123",
              role="supplier", company_id=None, supplier_id="sup-t1-a"),
     ]
@@ -224,6 +224,9 @@ def seed() -> None:
         seed_plans(db)
         _seed_factors(db)
         _seed_users(db)
+        if not settings.DEMO_DATA_ENABLED:
+            print("生产初始化完成（未创建演示用户和业务数据）")
+            return
         company = _seed_company(db)
         _seed_demo_users(db, company)
         subscribe(db, company.id, "pro")
@@ -234,7 +237,7 @@ def seed() -> None:
         # 构建 OLAP 星型模型（维度 + 事实表）
         from .services.olap import refresh_olap
         refresh_olap(db)
-        print("种子数据完成。管理员 admin/admin123；演示账号 enterprise/enterprise123、auditor/auditor123、supplier/supplier123（sup-t1-a 门户）；OLAP 星型模型已构建")
+        print("演示数据初始化完成；账号信息仅在本机私密配置中查看")
     finally:
         db.close()
 

@@ -1,0 +1,59 @@
+﻿source_row,source_sector,source_mtco2,target_sector,share,method,allocated_kgco2
+5,"Farming, Forestry, Animal Husbandry, Fishery and Water Conservancy",102.53,农林牧渔产品和服务,1.0,sector aggregation,102530000000.0
+12,Logging and Transport of Wood and Bamboo,0.0,农林牧渔产品和服务,1.0,sector aggregation,0.0
+6,Coal Mining and Dressing,68.7,煤炭采选产品,1.0,sector aggregation,68700000000.0
+7,Petroleum and Natural Gas Extraction,39.4,石油和天然气开采产品,1.0,sector aggregation,39400000000.0
+8,Ferrous Metals Mining and Dressing,9.44,金属矿采选产品,1.0,sector aggregation,9440000000.0
+9,Nonferrous Metals Mining and Dressing,2.94,金属矿采选产品,1.0,sector aggregation,2940000000.0
+10,Nonmetal Minerals Mining and Dressing,8.19,非金属矿和其他矿采选产品,1.0,sector aggregation,8189999999.999999
+11,Other Minerals Mining and Dressing,3.93,非金属矿和其他矿采选产品,1.0,sector aggregation,3930000000.0
+13,Food Processing,33.31,食品和烟草,1.0,sector aggregation,33310000000.000004
+14,Food Production,20.77,食品和烟草,1.0,sector aggregation,20770000000.0
+15,Beverage Production,16.22,食品和烟草,1.0,sector aggregation,16219999999.999998
+16,Tobacco Processing,0.61,食品和烟草,1.0,sector aggregation,610000000.0
+17,Textile Industry,18.47,纺织品,1.0,sector aggregation,18470000000.0
+18,Garments and Other Fiber Products,2.68,纺织服装鞋帽皮革羽绒及其制品,1.0,sector aggregation,2680000000.0
+19,"Leather, Furs, Down and Related Products",1.78,纺织服装鞋帽皮革羽绒及其制品,1.0,sector aggregation,1780000000.0
+20,"Timber Processing, Bamboo, Cane, Palm Fiber & Straw Products",3.91,木材加工品和家具,1.0,sector aggregation,3910000000.0
+21,Furniture Manufacturing,0.86,木材加工品和家具,1.0,sector aggregation,860000000.0
+22,Papermaking and Paper Products,24.32,造纸印刷和文教体育用品,1.0,sector aggregation,24320000000.0
+23,Printing and Record Medium Reproduction,1.63,造纸印刷和文教体育用品,1.0,sector aggregation,1630000000.0
+24,"Cultural, Educational and Sports Articles",2.16,造纸印刷和文教体育用品,1.0,sector aggregation,2160000000.0
+25,Petroleum Processing and Coking,136.72,石油、炼焦产品和核燃料加工品,1.0,sector aggregation,136720000000.0
+26,Raw Chemical Materials and Chemical Products,238.65,化学产品,1.0,sector aggregation,238650000000.0
+27,Medical and Pharmaceutical Products,8.84,化学产品,1.0,sector aggregation,8840000000.0
+28,Chemical Fiber,4.89,化学产品,1.0,sector aggregation,4890000000.0
+29,Rubber Products,2.98,化学产品,1.0,sector aggregation,2980000000.0
+30,Plastic Products,2.98,化学产品,1.0,sector aggregation,2980000000.0
+31,Nonmetal Mineral Products,1170.61,非金属矿物制品,1.0,sector aggregation,1170610000000.0
+32,Smelting and Pressing of Ferrous Metals,1677.02,金属冶炼和压延加工品,1.0,sector aggregation,1677020000000.0
+33,Smelting and Pressing of Nonferrous Metals,60.86,金属冶炼和压延加工品,1.0,sector aggregation,60860000000.0
+34,Metal Products,9.94,金属制品,1.0,sector aggregation,9940000000.0
+35,Ordinary Machinery,19.56,通用设备,1.0,sector aggregation,19560000000.0
+36,Equipment for Special Purposes,7.38,专用设备,1.0,sector aggregation,7380000000.0
+37,Transportation Equipment,12.6,交通运输设备,1.0,sector aggregation,12600000000.0
+38,Electric Equipment and Machinery,3.89,电气机械和器材,1.0,sector aggregation,3890000000.0
+39,Electronic and Telecommunications Equipment,3.92,通信设备、计算机和其他电子设备,1.0,sector aggregation,3920000000.0
+40,"Instruments, Meters, Cultural and Office Machinery",0.58,仪器仪表,1.0,sector aggregation,580000000.0
+41,Other Manufacturing Industry,1.03,其他制造产品和废品废料,1.0,sector aggregation,1030000000.0
+42,Scrap and waste,1.83,其他制造产品和废品废料,1.0,sector aggregation,1830000000.0
+43,"Production and Supply of Electric Power, Steam and Hot Water",4143.36,电力、热力的生产和供应,1.0,sector aggregation,4143359999999.9995
+44,Production and Supply of Gas,0.78,燃气生产和供应,1.0,sector aggregation,780000000.0
+45,Production and Supply of Tap Water,0.44,水的生产和供应,1.0,sector aggregation,440000000.0
+46,Construction,47.11,建筑,1.0,sector aggregation,47110000000.0
+47,"Transportation, Storage, Post and Telecommunication Services",723.87,交通运输、仓储和邮政,0.6446597790514996,output-proportional allocation (design assumption),466649874262.00903
+47,"Transportation, Storage, Post and Telecommunication Services",723.87,信息传输、软件和信息技术服务,0.3553402209485003,output-proportional allocation (design assumption),257220125737.99094
+48,"Wholesale, Retail Trade and Catering Services",83.39,批发和零售,0.7527672727372243,output-proportional allocation (design assumption),62773262873.55714
+48,"Wholesale, Retail Trade and Catering Services",83.39,住宿和餐饮,0.2472327272627757,output-proportional allocation (design assumption),20616737126.442867
+49,Others,168.49,金属制品、机械和设备修理服务,0.0030988526418009666,output-proportional allocation (design assumption),522125681.61704487
+49,Others,168.49,金融,0.19625330610321484,output-proportional allocation (design assumption),33066719545.33067
+49,Others,168.49,房地产,0.16278599310566066,output-proportional allocation (design assumption),27427811978.372765
+49,Others,168.49,租赁和商务服务,0.14937439205762734,output-proportional allocation (design assumption),25168091317.78963
+49,Others,168.49,研究和试验发展,0.030502508783591755,output-proportional allocation (design assumption),5139367704.947374
+49,Others,168.49,综合技术服务,0.07568676851327197,output-proportional allocation (design assumption),12752463626.801193
+49,Others,168.49,水利、环境和公共设施管理,0.01924833748465191,output-proportional allocation (design assumption),3243152382.789
+49,Others,168.49,居民服务、修理和其他服务,0.05608208224588754,output-proportional allocation (design assumption),9449270037.60959
+49,Others,168.49,教育,0.07648497402665556,output-proportional allocation (design assumption),12886953273.751196
+49,Others,168.49,卫生和社会工作,0.0863686261977606,output-proportional allocation (design assumption),14552249828.060684
+49,Others,168.49,文化、体育和娱乐,0.02852097934739351,output-proportional allocation (design assumption),4805499810.242332
+49,Others,168.49,公共管理、社会保障和社会组织,0.1155931794924834,output-proportional allocation (design assumption),19476294812.68853

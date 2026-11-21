@@ -81,14 +81,14 @@
 }
 
 .swiss-confirm .ant-modal-confirm-btns .ant-btn-primary {
-  border: 1px solid var(--accent, #0e3b2e);
-  background: var(--accent, #0e3b2e);
+  border: 1px solid var(--accent, #1756a4);
+  background: var(--accent, #1756a4);
   color: var(--accent-ink, #e8ffd0);
 }
 
 .swiss-confirm .ant-modal-confirm-btns .ant-btn-primary:not(:disabled):hover {
-  border-color: var(--accent, #0e3b2e) !important;
-  background: var(--accent, #0e3b2e) !important;
+  border-color: var(--accent, #1756a4) !important;
+  background: var(--accent, #1756a4) !important;
   color: var(--accent-ink, #e8ffd0) !important;
 }
 

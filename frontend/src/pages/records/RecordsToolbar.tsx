@@ -29,6 +29,7 @@ export default function RecordsToolbar({
 
   return (
     <>
+      <a className="records-template-link" href="/ledger-template.csv" download="碳速算_台账导入模板.csv">下载台账模板</a>
       <SwissButton
         variant="ghost"
         onClick={() => inputRef.current?.click()}

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { productsApi } from '../../api'
-import type { BomMatchResult, ProductDetail } from '../../api/types'
+import type { BomMatchResult, ProductBomLine, ProductDetail } from '../../api/types'
 import {
   SwissButton,
   SwissError,
@@ -12,8 +12,10 @@ import {
   SwissTable,
 } from '../../components/swiss'
 import type { SwissTableColumn } from '../../components/swiss'
+import BomFactorDrawer from './swiss/BomFactorDrawer'
 import BomImportDrawer from './swiss/BomImportDrawer'
 import BomTable from './swiss/BomTable'
+import ProductStudiesPanel from './swiss/ProductStudiesPanel'
 import PcfResultPanel from './swiss/PcfResultPanel'
 import { useCompanyScope } from './useCompanyScope'
 import {
@@ -44,6 +46,8 @@ export default function ProductDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
 
+  const [itemToReview, selectItem] = useState<ProductBomLine | null>(null)
+  const [reportLanguage, setLanguage] = useState('zh')
   const [importOpen, setImportOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -101,7 +105,8 @@ export default function ProductDetailPage() {
     try {
       const result = await productsApi.matchBom(productId)
       setMatchResult(result)
-      setNotice(`SBERT 匹配完成，共处理 ${result.matched_items.length} 条物料。`)
+      setPcfResponse(null)
+      setNotice(`语义匹配完成，本次自动处理 ${result.matched_items.length} 条物料。`)
       reload()
     } catch (error) {
       setActionError(errorMessage(error))
@@ -145,7 +150,7 @@ export default function ProductDetailPage() {
     setNotice(null)
     setActionError(null)
     try {
-      const response = await productsApi.generateProductReport(productId)
+      const response = await productsApi.generateProductReport(productId, reportLanguage, pcfResponse?.run_id)
       if ('report_no' in response) {
         navigate(`/reports/${response.report_no}`)
         return
@@ -251,7 +256,7 @@ export default function ProductDetailPage() {
                     disabled={busy || bomEmpty}
                     onClick={() => void handleMatch()}
                   >
-                    SBERT 匹配
+                    匹配因子
                   </SwissButton>
                   <SwissButton
                     loading={calculating}
@@ -260,6 +265,12 @@ export default function ProductDetailPage() {
                   >
                     PCF 核算
                   </SwissButton>
+                  <select className="product-language" aria-label="报告语言" value={reportLanguage} onChange={(event) => setLanguage(event.target.value)}>
+                    <option value="zh">报告 · 中文</option>
+                    <option value="en">报告 · English</option>
+                    <option value="de">报告 · Deutsch</option>
+                    <option value="fr">报告 · Français</option>
+                  </select>
                   <SwissButton
                     variant="ghost"
                     loading={reporting}
@@ -289,13 +300,14 @@ export default function ProductDetailPage() {
               </div>
             ) : null}
 
-            <BomTable items={detail.bom_items} />
+            <p className="product-evidence-note">核算边界为 BOM 上游采购金额法。自动匹配后可逐项核对因子来源，人工指定项会保留。</p>
+            <BomTable items={detail.bom_items} onSelect={canWrite && !busy ? selectItem : undefined} />
           </SwissSection>
 
           {matchResult ? (
             <SwissSection
               kicker="匹配结果"
-              title="SBERT 语义匹配"
+              title="语义匹配结果"
               extra={<span>最近一次匹配 · {matchResult.matched_items.length} 条</span>}
             >
               <SwissTable
@@ -311,7 +323,7 @@ export default function ProductDetailPage() {
             <SwissSection
               kicker="核算结果"
               title="PCF 结果"
-              extra={<span>运行 {pcfResponse.run_id}</span>}
+              extra={<Link to={`/audit/runs/${pcfResponse.run_id}`}>查看计算与因子凭证 ↗</Link>}
             >
               <PcfResultPanel response={pcfResponse} />
             </SwissSection>
@@ -319,12 +331,24 @@ export default function ProductDetailPage() {
         </>
       )}
 
+      {detail && productId && <ProductStudiesPanel key={productId} productId={productId} canWrite={canWrite} />}
+      {itemToReview && productId && (
+        <BomFactorDrawer key={itemToReview.bom_item_id} item={itemToReview} productId={productId}
+          onClose={() => selectItem(null)} onSaved={(updated) => {
+            setDetail((current) => current ? { ...current, bom_items: current.bom_items.map((item) => item.bom_item_id === updated.bom_item_id ? updated : item) } : current)
+            selectItem(null)
+            setPcfResponse(null)
+            setMatchResult(null)
+            setNotice('已保存物料因子。请重新执行 PCF 核算。')
+          }} />
+      )}
       {canWrite && productId ? (
         <BomImportDrawer
           open={importOpen}
           productId={productId}
           onClose={() => setImportOpen(false)}
           onImported={(imported) => {
+            if (imported > 0) { setPcfResponse(null); setMatchResult(null) }
             setImportOpen(false)
             setActionError(null)
             setNotice(

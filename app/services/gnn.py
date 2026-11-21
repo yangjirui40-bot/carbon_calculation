@@ -60,7 +60,7 @@ def compute_heatmap(
 ) -> dict:
     """输入节点/边，返回每个节点的聚合碳强度、是否估算与风险等级。"""
     if not nodes:
-        return {"nodes": [], "adjacency": [], "statistics": {"red": 0, "yellow": 0, "green": 0}}
+        return {"nodes": [], "adjacency": [], "statistics": {"red": 0, "yellow": 0, "green": 0, "unknown": 0}}
 
     node_ids = [n["id"] for n in nodes]
     A = build_adjacency(node_ids, edges)
@@ -71,7 +71,7 @@ def compute_heatmap(
     known = np.zeros(F, dtype=bool)
     for i, n in enumerate(nodes):
         v = n.get(intensity_key)
-        if v is not None and v > 0:
+        if v is not None and np.isfinite(v) and v >= 0:
             H[i, 0] = float(v)
             known[i] = True
         H[i, 1] = 1.0 if known[i] else 0.0
@@ -79,7 +79,7 @@ def compute_heatmap(
         H[i, 2] = 1.0 / max(tier, 1.0)
 
     H_out = gcn_propagate(H, A, k=k)
-    stats = {"red": 0, "yellow": 0, "green": 0}
+    stats = {"red": 0, "yellow": 0, "green": 0, "unknown": 0}
 
     result_nodes = []
     for i, n in enumerate(nodes):
@@ -89,14 +89,15 @@ def compute_heatmap(
             intensity = float(H[i, 0])
             estimated = False
         else:
-            intensity = raw / max(mask, 1e-6)
+            intensity = raw / mask if mask > 1e-6 else None
             estimated = True
-        risk = _risk(intensity, low_threshold, high_threshold)
+        risk = _risk(intensity, low_threshold, high_threshold) if intensity is not None else "unknown"
         stats[risk] += 1
         result_nodes.append(
             {
                 **n,
-                "propagated_intensity": round(intensity, 6),
+                "propagated_intensity": round(intensity, 6) if intensity is not None else None,
+                "estimate_available": intensity is not None,
                 "estimated": estimated,
                 "risk_level": risk,
             }
@@ -107,6 +108,9 @@ def compute_heatmap(
         "adjacency": A.tolist(),
         "statistics": stats,
         "layers": k,
+        "method": "identity-weight GCN-style neighborhood diffusion; no supervised training",
+        "thresholds": {"low": low_threshold, "high": high_threshold},
+        "note": "无可用邻居数据时保持未知；热点提示不构成信用评级或经验证的排放预测区间",
     }
 
 

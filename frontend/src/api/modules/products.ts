@@ -67,10 +67,30 @@ export function calculateProduct(productId: string) {
 }
 
 /** 生成并保存 PCF 报告；无可用核算结果时 found=false */
-export function generateProductReport(productId: string, language = 'zh') {
+export function generateProductReport(productId: string, language = 'zh', runId?: string) {
   return request<ReportGenerationResponse | ReportNotFound>({
     url: `/api/v1/products/${productId}/report`,
     method: 'get',
-    params: { language },
+    params: { language, run_id: runId },
+  })
+}
+
+export function setBomFactor(productId: string, itemId: string, factorId: string) {
+  return request<import('../types').ProductBomLine>({
+    url: `/api/v1/products/${encodeURIComponent(productId)}/bom/${encodeURIComponent(itemId)}/factor`,
+    method: 'put',
+    data: { factor_id: factorId },
+  })
+}
+
+export function importBomFile(productId: string, file: File, preview: boolean) {
+  const data = new FormData()
+  data.append('file', file)
+  return request<BomImportResult>({
+    url: `/api/v1/products/${encodeURIComponent(productId)}/bom/import`,
+    method: 'post',
+    params: { preview },
+    data,
+    timeout: 60_000,
   })
 }

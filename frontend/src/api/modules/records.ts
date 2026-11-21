@@ -3,6 +3,7 @@ import type {
   BusinessRecord,
   RecordCreatePayload,
   RecordImportResult,
+  RecordClassification,
 } from '../types'
 
 export interface RecordListParams {
@@ -35,6 +36,7 @@ export function importRecords(file: File, companyId: number) {
     method: 'post',
     params: { company_id: companyId },
     data: form,
+    timeout: 120_000,
   })
 }
 
@@ -42,5 +44,31 @@ export function deleteRecord(recordNo: string) {
   return request<void>({
     url: `/api/v1/records/${recordNo}`,
     method: 'delete',
+  })
+}
+
+export interface RecordsPageParams extends RecordListParams {
+  page: number
+  size: number
+  category?: string
+  scope?: string
+  review_status?: string; site_id?: number
+}
+
+export function pageRecords(params: RecordsPageParams) {
+  return request<{ records: BusinessRecord[]; periods: string[]; total: number; page: number }>({
+    url: '/api/v1/records/page', method: 'get', params,
+  })
+}
+
+export function classifyRecord(recordNo: string, payload: RecordClassification) {
+  return request<BusinessRecord>({
+    url: `/api/v1/records/${encodeURIComponent(recordNo)}/classification`, method: 'put', data: payload,
+  })
+}
+
+export function confirmRecord(recordNo: string) {
+  return request<BusinessRecord>({
+    url: `/api/v1/records/${encodeURIComponent(recordNo)}/confirm`, method: 'post',
   })
 }

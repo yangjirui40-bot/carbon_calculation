@@ -36,7 +36,7 @@ def create_company(payload: CompanyCreate, db: Session = Depends(get_db),
 @router.get("")
 def list_companies(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     q = db.query(Company).order_by(Company.id)
-    if user.role not in ("admin", "auditor"):
+    if user.role != "admin":
         q = q.filter(Company.id == user.company_id)  # 租户隔离：企业用户仅可见本企业
     return [_to_dict(c) for c in q.all()]
 

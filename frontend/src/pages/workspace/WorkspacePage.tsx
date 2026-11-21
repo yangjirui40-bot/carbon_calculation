@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { CalculatorOutlined, UploadOutlined } from '@ant-design/icons'
 import {
   billingApi,
   calculationsApi,
@@ -20,10 +21,8 @@ import { useCompany } from '../../context/CompanyContext'
 import { readSession } from '../../router/guards/RequireAuth'
 import CompanySelector from './swiss/CompanySelector'
 import RecentRuns from './swiss/RecentRuns'
-import ScopeList from './swiss/ScopeList'
 import SubscriptionPanel from './swiss/SubscriptionPanel'
-import WorkspaceHero from './swiss/WorkspaceHero'
-import WorkspaceMetrics from './swiss/WorkspaceMetrics'
+import OperationsOverview from './OperationsOverview'
 import './WorkspacePage.css'
 
 type WorkspaceData = {
@@ -61,7 +60,6 @@ function WorkspaceSkeleton() {
  * 导航与品牌由全局 SwissAppShell 提供，本页不再带侧栏或整页壳层。
  */
 export default function WorkspacePage() {
-  const navigate = useNavigate()
   const { companyId, setCompanyId } = useCompany()
   const session = readSession()
   const sessionRole = session?.user.role ?? null
@@ -124,11 +122,10 @@ export default function WorkspacePage() {
       companiesApi.getCompany(resolvedCompanyId),
       dashboardApi.getSummary(resolvedCompanyId),
       documentsApi.listDocuments(companyParams),
-      documentsApi.getReviewQueue(companyParams),
       calculationsApi.listRuns(companyParams),
       billingApi.getSubscription(resolvedCompanyId).catch(() => null),
     ])
-      .then(([company, summary, documents, reviewQueue, runs, subscription]) => {
+      .then(([company, summary, documents, runs, subscription]) => {
         if (!active) return
         const scopedDocuments =
           scopedCompanyId === undefined
@@ -138,17 +135,11 @@ export default function WorkspacePage() {
           scopedCompanyId === undefined
             ? runs.filter((item) => item.company_id === resolvedCompanyId)
             : runs
-        const scopedReviewCount =
-          scopedCompanyId === undefined
-            ? reviewQueue.queue.filter((item) =>
-                scopedDocuments.some((doc) => doc.id === item.id),
-              ).length
-            : reviewQueue.count
         setData({
           company,
           summary,
           documentCount: scopedDocuments.length,
-          reviewCount: scopedReviewCount,
+          reviewCount: scopedDocuments.filter((doc) => doc.parse_status === 'parsed' && doc.review_status === 'pending').length,
           runs: scopedRuns,
           subscription,
         })
@@ -166,18 +157,24 @@ export default function WorkspacePage() {
   }, [resolvedCompanyId, sessionRole, reloadKey])
 
   const description = data
-    ? `${data.company.name} · ${data.company.industry} · 报告期 ${data.summary.period ?? '—'}`
+    ? `${data.company.name} · ${data.company.industry}`
     : '汇总单据、核算与 Scope 结果，并提供最近核算入口。'
 
   const showSkeleton =
     resolvedCompanyId !== null && (loading || (!data && !error))
 
   return (
-    <div className="ws-page">
+    <main className="ws-page">
       <SwissMasthead
         kicker="Enterprise workspace"
         title="企业工作台"
         description={description}
+        actions={resolvedCompanyId && sessionRole !== 'auditor' ? (
+          <>
+            <Link className="ops-button" to="/calculations"><CalculatorOutlined /> 发起核算</Link>
+            <Link className="ops-button is-primary" to="/documents"><UploadOutlined /> 上传单据</Link>
+          </>
+        ) : undefined}
       />
 
       {resolvedCompanyId === null ? (
@@ -201,30 +198,20 @@ export default function WorkspacePage() {
         <SwissError message={error} onRetry={() => setReloadKey((key) => key + 1)} />
       ) : data ? (
         <>
-          <WorkspaceHero
-            company={data.company}
+          <OperationsOverview
             summary={data.summary}
-            onUpload={() => navigate('/documents')}
-            onManual={() => navigate('/records')}
-            onCalculate={() => navigate('/calculations')}
-          />
-
-          {data.summary.total_kgco2e > 0 ? <ScopeList summary={data.summary} /> : null}
-
-          <WorkspaceMetrics
-            documentCount={data.documentCount}
             reviewCount={data.reviewCount}
-            runCount={data.runs.length}
+            documentCount={data.documentCount}
+            canWrite={sessionRole !== 'auditor'}
           />
-
           <div className={data.subscription ? 'ws-split' : 'ws-split ws-split--single'}>
-            <RecentRuns runs={data.runs} />
+            <RecentRuns runs={data.runs.filter((run) => run.operation === 'enterprise')} />
             {data.subscription ? (
               <SubscriptionPanel subscription={data.subscription} />
             ) : null}
           </div>
         </>
       ) : null}
-    </div>
+    </main>
   )
 }

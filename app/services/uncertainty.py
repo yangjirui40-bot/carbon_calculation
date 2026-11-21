@@ -26,6 +26,8 @@ def analyze(items: list[dict], total: float | None = None) -> dict:
             "sigma_kgco2e": round(sigma_i, 4),
             "contribution_to_variance": round((sigma_i * sigma_i) / variance, 6) if variance > 0 else 0,
         })
+    for row in rows:
+        row["contribution_to_variance"] = round(row["sigma_kgco2e"] ** 2 / variance, 6) if variance > 0 else 0
     sigma_total = math.sqrt(variance)
     rel = sigma_total / total if total > 0 else 0.0
     return {
@@ -34,6 +36,7 @@ def analyze(items: list[dict], total: float | None = None) -> dict:
         "relative_uncertainty": round(rel * 100, 2),
         "ci95_low": round(total - 1.96 * sigma_total, 4),
         "ci95_high": round(total + 1.96 * sigma_total, 4),
+        "assumptions": "独立误差与正态近似；缺失不确定性参数时采用10%情景假设，不是第三方验证置信区间",
         "items": sorted(rows, key=lambda x: -x["sigma_kgco2e"]),
     }
 

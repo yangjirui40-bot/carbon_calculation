@@ -84,3 +84,9 @@
     font-size: 38px;
   }
 }
+
+.swiss-page-masthead { padding: 25px 0 20px; }
+.swiss-page-masthead__kicker { display: none; }
+.swiss-page-masthead__title { font-size: clamp(25px, 2.55vw, 34px); line-height: 1.22; letter-spacing: -0.025em; }
+.swiss-page-masthead__desc { font-size: 13px; margin-top: 7px; }
+.swiss-page-masthead__back { margin-bottom: 10px; font-size: 12px; border: 0; }

@@ -1,21 +1,15 @@
-{
-	# 域名由 Caddy 容器环境变量 DOMAIN 注入（deploy 时写入 .env）。
-	# Caddy 自动申请 Let's Encrypt 证书（需 80/443 可公网访问，域名已解析到本机）。
-	{$DOMAIN} {
-		encode zstd gzip
-
-		# 前台完整，隐藏开发与运维端点（对外 404）
-		@blocked path /docs /docs/* /redoc /redoc/* /openapi.json /metrics
-		handle @blocked {
-			respond "Not Found" 404
-		}
-
-		header {
-			Strict-Transport-Security "max-age=31536000; includeSubDomains"
-			X-Content-Type-Options nosniff
-			X-Frame-Options DENY
-		}
-
-		reverse_proxy backend:8000
-	}
+carbon.yjr-adc-demo.xyz {
+    encode gzip zstd
+    request_body {
+        max_size 21MB
+    }
+    @internal path /docs /docs/* /redoc /redoc/* /openapi.json /metrics
+    respond @internal 404
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        X-Frame-Options DENY
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+    reverse_proxy carbonspeed-api:8000
 }

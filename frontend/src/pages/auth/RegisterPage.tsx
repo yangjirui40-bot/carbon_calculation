@@ -38,8 +38,8 @@ export default function RegisterPage() {
       next.confirm = '两次输入的密码不一致'
     }
     const companyCode = company.trim()
-    if (companyCode !== '' && !/^\d+$/.test(companyCode)) {
-      next.company = '企业编号需为数字'
+    if (companyCode !== '' && (companyCode.length < 2 || companyCode.length > 255)) {
+      next.company = '企业名称需为2—255个字符'
     }
     return next
   }
@@ -59,7 +59,7 @@ export default function RegisterPage() {
         username: username.trim(),
         email: email.trim(),
         password,
-        company_id: companyCode === '' ? undefined : Number(companyCode),
+        company_name: companyCode || undefined,
       })
       navigate('/login', {
         replace: true,
@@ -205,14 +205,14 @@ export default function RegisterPage() {
 
               <div className="auth-field">
                 <label className="auth-label" htmlFor="register-company">
-                  <span>企业编号（选填）</span>
-                  <span className="auth-label-en">Company ID</span>
+                  <span>企业名称（选填）</span>
+                  <span className="auth-label-en">Company name</span>
                 </label>
                 <input
                   id="register-company"
                   className="auth-input"
                   type="text"
-                  inputMode="numeric"
+                  inputMode="text"
                   value={company}
                   aria-invalid={fieldErrors.company ? true : undefined}
                   aria-describedby={fieldErrors.company ? 'register-company-error' : 'register-company-hint'}
@@ -224,7 +224,7 @@ export default function RegisterPage() {
                   </span>
                 ) : (
                   <span className="auth-hint" id="register-company-hint">
-                    对应企业档案编号，留空则稍后由管理员分配
+                    注册后创建独立企业空间；加入已有企业请联系管理员开通
                   </span>
                 )}
               </div>

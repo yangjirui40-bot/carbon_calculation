@@ -1,182 +1,134 @@
-"""LayoutXLM SER 关键信息抽取适配器（真实微调模型：Wulolo/layoutxlm-finetuned-xfund-zh）。
-
-平台设计：LayoutLMv3/LayoutXLM 多模态模型对 OCR 词条做语义实体识别（SER），
-标注 B-/I-QUESTION（字段名）与 B-/I-ANSWER（字段值），再按版面配对得到键值对。
-模型未下载时本引擎自动不可用，流水线回退到版面规则抽取。
-"""
+"""Optional document SER adapter; local-only weights and first-subtoken decoding."""
 from __future__ import annotations
-
 import io
-
-import numpy as np
-
+from pathlib import Path
 from ...config import settings
-
 _engine = None
-_load_error: str | None = None
-
+_load_error = None
 
 def _model_cached(model_id: str) -> bool:
-    """模型权重未下载时直接禁用（避免请求路径触发大文件网络下载）。"""
-    import os
+    if not model_id:
+        return False
+    local = Path(model_id)
+    roots = [local] if local.is_dir() else list((Path(settings.models_cache_path) / ('models--' + model_id.replace('/', '--')) / 'snapshots').glob('*'))
+    return any((p / 'config.json').is_file() and (any(p.glob('*.safetensors')) or (p / 'pytorch_model.bin').is_file()) for p in roots)
 
-    name = "models--" + model_id.replace("/", "--")
-    path = os.path.join(settings.models_cache_path, name)
-    return os.path.isdir(path) and bool(os.listdir(path))
-
+def model_cached(): return _model_cached(settings.SER_MODEL)
+def is_loaded(): return _engine is not None
 
 def _get_engine():
     global _engine, _load_error
     if _engine is not None or _load_error is not None:
         return _engine
-    if not _model_cached(settings.SER_MODEL):
-        _load_error = f"模型未下载：{settings.SER_MODEL}（运行 python -m app.services.ai.provision 下载）"
+    if not model_cached():
+        _load_error = '模型权重尚未配置；继续使用OCR和规则复核'
         return None
     try:
-        import os
-
-        os.environ.setdefault("HF_ENDPOINT", settings.HF_ENDPOINT)
-        os.environ.setdefault("HF_HOME", settings.models_cache_path)
-        import torch  # noqa: F401
         from transformers import AutoModelForTokenClassification, AutoProcessor
-
-        processor = AutoProcessor.from_pretrained(
-            settings.SER_MODEL, cache_dir=settings.models_cache_path, apply_ocr=False
-        )
-        model = AutoModelForTokenClassification.from_pretrained(
-            settings.SER_MODEL, cache_dir=settings.models_cache_path
-        )
+        processor = AutoProcessor.from_pretrained(settings.SER_MODEL, cache_dir=settings.models_cache_path, apply_ocr=False, local_files_only=True)
+        model = AutoModelForTokenClassification.from_pretrained(settings.SER_MODEL, cache_dir=settings.models_cache_path, local_files_only=True)
+        labels = list(model.config.id2label.values())
+        if not any('QUESTION' in str(x).upper() for x in labels):
+            raise ValueError('检查点缺少可识别的BIO标签映射')
         model.eval()
         _engine = SEREngine(processor, model)
-    except Exception as exc:  # noqa: BLE001
-        _load_error = f"{type(exc).__name__}: {exc}"
+    except Exception as exc:
+        _load_error = f'SER加载失败（{type(exc).__name__}）'
     return _engine
 
-
-def model_cached() -> bool:
-    return _model_cached(settings.SER_MODEL)
-
-
-def is_loaded() -> bool:
-    return _engine is not None
-
-
-def ser_available() -> bool:
-    return _get_engine() is not None
-
-
-def ser_load_error() -> str | None:
-    _get_engine()
+def ser_available(): return bool(settings.SER_ENABLED and _get_engine() is not None)
+def ser_load_error():
+    if settings.SER_ENABLED: _get_engine()
     return _load_error
 
+def word_windows(tokenizer, texts, limit=510):
+    """Keep every OCR word without exceeding a model's text token budget."""
+    start = 0
+    size = 0
+    for i, text in enumerate(texts):
+        count = len(tokenizer([text], add_special_tokens=False)['input_ids'])
+        count = max(count, 1)
+        if count > limit:
+            raise ValueError('单个OCR词条超过模型文本长度，请先拆分词条')
+        if size + count > limit:
+            yield start, i
+            start, size = i, 0
+        size += count
+    if start < len(texts): yield start, len(texts)
+
+def aggregate_entities(labels):
+    entities, current = [], None
+    for i, label in enumerate(labels):
+        label = str(label).upper()
+        ent = label[2:] if label.startswith(('B-', 'I-')) else None
+        if ent and (label.startswith('B-') or current is None or current[0] != ent):
+            if current: entities.append(current)
+            current = (ent, [i])
+        elif ent and current:
+            current[1].append(i)
+        else:
+            if current: entities.append(current)
+            current = None
+    if current: entities.append(current)
+    return entities
 
 class SEREngine:
-    name = "LayoutLMv3-SER(XFUND-zh)"
-
+    name = 'Document-SER'
     def __init__(self, processor, model):
-        self.processor = processor
-        self.model = model
+        self.processor, self.model = processor, model
         self.tokenizer = processor.tokenizer
-        self.image_processor = processor.image_processor
-        self.labels = {str(k): v for k, v in (model.config.id2label or {}).items()}
+        self.labels = {int(k): str(v).upper() for k, v in model.config.id2label.items()}
 
     def _forward_labels(self, image, texts, boxes):
         import torch
-
-        tok = self.tokenizer(texts, is_split_into_words=True, add_special_tokens=False)
-        word_ids = tok.word_ids()
-        max_len = int(getattr(self.model.config, "max_position_embeddings", 512))
-        input_ids = [int(self.tokenizer.cls_token_id)] + [int(i) for i in tok["input_ids"]] + [int(self.tokenizer.sep_token_id)]
-        bbox = [[0, 0, 0, 0]] + [[int(v) for v in (boxes[wid] if wid is not None else [0, 0, 0, 0])] for wid in word_ids] + [[0, 0, 0, 0]]
-        n = len(input_ids)
-        input_ids += [int(self.tokenizer.pad_token_id)] * (max_len - n)
-        bbox += [[0, 0, 0, 0]] * (max_len - n)
-        attention_mask = [1] * n + [0] * (max_len - n)
-        img_enc = self.image_processor(images=image, return_tensors="pt")
-
-        with torch.no_grad():
-            logits = self.model(
-                input_ids=torch.tensor([input_ids]),
-                bbox=torch.tensor([bbox]),
-                attention_mask=torch.tensor([attention_mask]),
-                pixel_values=img_enc["pixel_values"],
-            ).logits
-        preds = logits[0, 1 : 1 + len(word_ids)].argmax(-1).tolist()
-        word_labels = []
-        for w in range(len(texts)):
-            idxs = [i for i, wid in enumerate(word_ids) if wid == w]
-            if not idxs:
-                word_labels.append("O")
-                continue
-            votes = [preds[i] for i in idxs]
-            word_labels.append(self.labels[str(max(set(votes), key=votes.count))])
-        return word_labels
+        import inspect
+        result = ['O'] * len(texts)
+        allowed = inspect.signature(self.model.forward).parameters
+        for start, end in word_windows(self.tokenizer, texts):
+            enc = self.processor(images=image, text=texts[start:end], boxes=boxes[start:end], truncation=True, max_length=512, padding='max_length', return_tensors='pt')
+            word_ids = enc.word_ids(batch_index=0)
+            values = dict(enc)
+            if 'image' in allowed and 'pixel_values' in values:
+                values['image'] = values.pop('pixel_values')
+            values = {k: v for k, v in values.items() if k in allowed}
+            with torch.inference_mode(): preds = self.model(**values).logits[0].argmax(-1).tolist()
+            seen = set()
+            for token_id, wid in enumerate(word_ids):
+                if wid is not None and wid not in seen:
+                    result[start + wid] = self.labels.get(preds[token_id], 'O')
+                    seen.add(wid)
+        return result
 
     @staticmethod
-    def _entity(label: str) -> str | None:
-        if label.startswith("B-") or label.startswith("I-"):
-            return label[2:]
-        return None
+    def _entity(label):
+        return label[2:] if label.startswith(('B-', 'I-')) else None
 
     def extract(self, image_bytes: bytes, words: list[dict]) -> list[dict]:
-        """返回 [(question, answer, question_idx, answer_idx), ...] 键值对。"""
         from PIL import Image
-
-        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        w, h = img.size
-        texts = [x["text"] for x in words]
-        boxes = [[x["box"][0] / w * 1000, x["box"][1] / h * 1000,
-                  x["box"][2] / w * 1000, x["box"][3] / h * 1000] for x in words]
-        labels = self._forward_labels(img, texts, boxes)
-
-        # 聚合 BIO 实体
-        entities = []
-        current = None
-        for i, (wd, lab) in enumerate(zip(words, labels)):
-            ent = self._entity(lab)
-            if lab.startswith("B-") or (ent and (current is None or current[0] != ent)):
-                current = (ent, [i])
-            elif lab.startswith("I-") and current and current[0] == ent:
-                current[1].append(i)
-            else:
-                if current:
-                    entities.append((current[0], current[1]))
-                current = None
-        if current:
-            entities.append((current[0], current[1]))
-
-        pairs = []
-        for ent, idxs in entities:
-            if ent != "QUESTION":
-                continue
-            qi = idxs[-1]
-            q_box = words[qi]["box"]
-            best = None
-            for ent2, idxs2 in entities:
-                if ent2 != "ANSWER":
-                    continue
-                ai = idxs2[0]
-                a_box = words[ai]["box"]
-                if a_box[0] < q_box[2] - 5:
-                    continue  # 答案应在问题右侧或下方
-                same_line = abs((a_box[1] + a_box[3]) - (q_box[1] + q_box[3])) / 2 <= max(q_box[3] - q_box[1], 1) / 2 + 16
-                dist = abs((a_box[1] + a_box[3]) - (q_box[1] + q_box[3])) / 2
-                if same_line and (best is None or dist < best[0]):
-                    best = (dist, ai)
-            if best:
-                pairs.append({
-                    "question": "".join(words[i]["text"] for i in idxs),
-                    "answer": "".join(words[i]["text"] for i in idxs2_of_answer(best[1], entities)),
-                    "answer_idx": best[1],
-                })
+        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        width, height = image.size
+        if not words: return []
+        boxes = [[max(0, min(1000, int(round(v / (width if j % 2 == 0 else height) * 1000)))) for j, v in enumerate(w['box'])] for w in words]
+        labels = self._forward_labels(image, [w['text'] for w in words], boxes)
+        entities = aggregate_entities(labels)
+        answers = [(ids, words[ids[0]]['box']) for kind, ids in entities if kind == 'ANSWER']
+        pairs, used = [], set()
+        for kind, ids in entities:
+            if kind != 'QUESTION': continue
+            q = words[ids[-1]]['box']
+            candidates = []
+            for a_ids, a in answers:
+                if a_ids[0] in used: continue
+                qh = max(q[3]-q[1], 1)
+                same_line = abs((a[1]+a[3]-q[1]-q[3])/2) <= qh/2+8
+                right = same_line and a[0] >= q[2]-5
+                below = a[1] >= q[3]-2 and a[1]-q[3] <= 3*qh and abs(a[0]-q[0]) <= 3*qh
+                if right or below:
+                    dist = abs(a[0]-q[2]) + 2*abs(a[1]-q[1])
+                    candidates.append((dist, a_ids))
+            if not candidates: continue
+            _, a_ids = min(candidates, key=lambda x: x[0]); used.add(a_ids[0])
+            pairs.append({'question': ''.join(words[i]['text'] for i in ids), 'answer': ''.join(words[i]['text'] for i in a_ids), 'question_idx': ids[0], 'answer_idx': a_ids[0]})
         return pairs
 
-
-def idxs2_of_answer(ai: int, entities) -> list[int]:
-    for ent, idxs in entities:
-        if ent == "ANSWER" and idxs and idxs[0] == ai:
-            return idxs
-    return [ai]
-
-
-__all__ = ["ser_available", "ser_load_error", "SEREngine"]
+__all__ = ['ser_available', 'ser_load_error', 'SEREngine', 'aggregate_entities', 'word_windows']

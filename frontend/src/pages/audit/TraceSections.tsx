@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { AuditTrace } from '../../api/types'
 import {
   SwissSection,
@@ -29,6 +30,8 @@ const recordColumns: SwissTableColumn[] = [
   { key: 'category', title: '类别' },
   { key: 'scope', title: 'Scope', width: 76 },
   { key: 'activity', title: '活动量 / 金额', align: 'right' },
+  { key: 'factor_id', title: '实际使用因子' },
+  { key: 'document', title: '原始凭证' },
   { key: 'emissions', title: '排放量（kgCO₂e）', align: 'right' },
 ]
 
@@ -40,10 +43,14 @@ const documentColumns: SwissTableColumn[] = [
 ]
 
 /** 穿透核查：因子、明细记录、关联单据与运行审计日志时间线 */
-export default function TraceSections({ trace }: { trace: AuditTrace }) {
-  const factors = trace.factors ?? []
-  const records = trace.records ?? []
-  const documents = trace.documents ?? []
+export default function TraceSections({ trace, selectedRecord, onReset }: {
+  trace: AuditTrace
+  selectedRecord: string | null
+  onReset: () => void
+}) {
+  const records = (trace.records ?? []).filter((record) => !selectedRecord || record.record_no === selectedRecord)
+  const factors = (trace.factors ?? []).filter((factor) => !selectedRecord || records.some((record) => record.factor_id === factor.factor_id))
+  const documents = (trace.documents ?? []).filter((document) => !selectedRecord || records.some((record) => record.document_id === document.id))
   const auditLogs = trace.audit_logs ?? []
 
   const factorRows = factors.map((factor) => ({
@@ -55,7 +62,7 @@ export default function TraceSections({ trace }: { trace: AuditTrace }) {
       </span>
     ),
     unit: factor.unit,
-    version: <span className="audit-mono">{factor.version}</span>,
+    version: <span className="audit-mono">{factor.version}{factor.snapshot_available === false ? ' · 当前值' : ''}{factor.is_demo ? ' · 演示' : ''}</span>,
     origin: (
       <span className="audit-origin" title={sanitizeOrigin(factor.origin)}>
         {sanitizeOrigin(factor.origin)}
@@ -73,6 +80,8 @@ export default function TraceSections({ trace }: { trace: AuditTrace }) {
         {activityText(record.quantity, record.amount)}
       </span>
     ),
+    factor_id: record.factor_id,
+    document: record.document_id ? <Link to={`/documents/${record.document_id}/review`}>{record.evidence_link === 'current_register' ? '查看关联原件（当前台账）' : '查看原件'} ↗</Link> : EMPTY_VALUE,
     emissions: (
       <span className="audit-mono audit-number">
         {formatNumber(record.emissions_kgco2e, 2)}
@@ -81,7 +90,7 @@ export default function TraceSections({ trace }: { trace: AuditTrace }) {
   }))
 
   const documentRows = documents.map((document) => ({
-    file_name: document.file_name,
+    file_name: <Link to={`/documents/${document.id}/review`}>{document.file_name} ↗</Link>,
     doc_type: docTypeLabel(document.doc_type),
     parse_status: parseStatusLabel(document.parse_status),
     ocr_engine: document.ocr_engine ? (
@@ -93,6 +102,10 @@ export default function TraceSections({ trace }: { trace: AuditTrace }) {
 
   return (
     <>
+      {selectedRecord && <div className="audit-selected">
+        <span>当前核对记录 <strong>{selectedRecord}</strong></span>
+        <button type="button" onClick={onReset}>查看全部记录</button>
+      </div>}
       <SwissSection
         kicker="Trace / Factors"
         title="因子清单"

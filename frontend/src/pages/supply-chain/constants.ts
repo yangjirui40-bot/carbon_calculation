@@ -8,12 +8,13 @@ export const PRICE_UNIT = '元/kgCO₂e'
 /** 供应商碳强度单位（后端模型：kgCO2e/CNY） */
 export const INTENSITY_UNIT = 'kgCO₂e/元'
 
-export const RISK_LEVELS: RiskLevel[] = ['red', 'yellow', 'green']
+export const RISK_LEVELS: RiskLevel[] = ['red', 'yellow', 'green', 'unknown']
 
 export const RISK_LABELS: Record<RiskLevel, string> = {
   red: '红 · 高风险',
   yellow: '黄 · 中风险',
   green: '绿 · 低风险',
+  unknown: '数据不足 · 待补充',
 }
 
 export const RISK_OPTIONS: Array<{ value: RiskLevel; label: string }> = [

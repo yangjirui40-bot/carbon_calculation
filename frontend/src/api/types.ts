@@ -184,6 +184,8 @@ export interface ReviewQueueResponse {
 }
 
 export interface DocumentReviewPayload {
+  site_id?: number | null
+  org_unit_id?: number | null
   period?: string
   category?: string
   scope?: string
@@ -212,7 +214,16 @@ export interface DocumentVerifyResponse extends SourceDocument {
 
 export type RecordReviewStatus = 'pending' | 'confirmed' | 'rejected'
 
-export interface BusinessRecord {
+export interface RecordClassification {
+  site_id?: number | null
+  org_unit_id?: number | null
+  site_name?: string | null
+  workshop?: string | null
+  production_line?: string | null
+  scope3_category?: number | null
+}
+
+export interface BusinessRecord extends RecordClassification {
   id: number
   record_no: string
   company_id: number
@@ -230,7 +241,7 @@ export interface BusinessRecord {
   remark: string | null
 }
 
-export interface RecordCreatePayload {
+export interface RecordCreatePayload extends RecordClassification {
   record_no: string
   company_id: number
   period: string
@@ -449,6 +460,7 @@ export interface ProductRecord {
 }
 
 export interface ProductBomLine {
+  assembly_path?: string | null
   bom_item_id: string
   material_name: string
   material_amount: number
@@ -472,6 +484,7 @@ export interface ProductCreatePayload {
 }
 
 export interface BomItemPayload {
+  assembly_path?: string | null
   bom_item_id: string
   material_name: string
   material_amount: number
@@ -484,6 +497,9 @@ export interface BomItemPayload {
 export interface BomImportResult {
   product_id: string
   imported: number
+  ready: number
+  skipped: number
+  total_rows: number
 }
 
 export interface BomMatchResult {
@@ -503,7 +519,11 @@ export interface BomMatchResult {
  * ============================================================ */
 
 export interface DashboardSummary {
-  run_id?: string
+  run_id?: string | null
+  periods?: string[]
+  record_count?: number
+  excluded_count?: number
+  uses_demo_factors?: boolean
   total_kgco2e: number
   scope_breakdown: Record<Scope, number>
   period?: string | null
@@ -516,12 +536,13 @@ export interface DashboardRing {
 
 export interface DashboardSankey {
   nodes: Array<{ name: string }>
-  links: Array<{ source: string; target: string; value: number }>
+  links: Array<{ source: string; target: string; value: number; scope?: string; category?: string; record_count?: number }>
   summary: DashboardSummary
 }
 
 export interface DashboardTrendPoint {
   period: string
+  run_id?: string
   scope1: number
   scope2: number
   scope3: number
@@ -532,8 +553,31 @@ export interface DashboardTrend {
   historical: DashboardTrendPoint[]
   forecast: Array<{ period: string; total: number }>
   target_line: number[]
-  target_total_kgco2e: number
+  target_total_kgco2e: number | null
   exceed_warning: boolean
+  budget_year?: number
+  monthly_budget_kgco2e?: number | null
+}
+
+export interface DashboardProduction {
+  locations: Array<RecordClassification & { scope: string; emissions_kgco2e: number }>
+  sites?: Array<{site_id:number; site_name:string; scope:string; emissions_kgco2e:number}>
+  scope3: Array<{ category: number | null; emissions_kgco2e: number; has_records: boolean;
+    assessment?: { status: string; rationale: string } | null }>
+  sankey: {
+    nodes: Array<{ name: string; label: string; depth: number }>
+    links: Array<{ source: string; target: string; value: number }>
+  }
+}
+
+export interface DashboardBudget {
+  year: number
+  annual_limit_kgco2e: number | null
+  allocated_kgco2e: number | null
+  actual_kgco2e: number
+  covered_months: number
+  elapsed_months: number
+  status: 'unset' | 'over' | 'within' | 'incomplete'
 }
 
 export interface DashboardDrilldown {
@@ -544,7 +588,11 @@ export interface DashboardDrilldown {
       total_kgco2e: number
       items: Array<{
         record_no: string
-        /** 星型模型下钻不含期间，回退路径才有 */
+        site_id?: number | null
+        site_name?: string | null
+        workshop?: string | null
+        production_line?: string | null
+        scope3_category?: number | null
         period?: string
         category: string
         basis: number | null
@@ -568,9 +616,11 @@ export interface AuditFactorTrace {
   version: string
   origin: string | null
   is_demo: boolean
+  snapshot_available?: boolean
 }
 
 export interface AuditTrace {
+  lineage?: { inputs: number; results: number }
   run_id: string
   found: boolean
   operation?: string
@@ -579,12 +629,14 @@ export interface AuditTrace {
   factors?: AuditFactorTrace[]
   records?: Array<{
     record_no: string
-    period: string
+    period: string | null
     category: string
     scope: string
     quantity: number | null
     amount: number | null
     factor_id: string
+    document_id?: number | null
+    evidence_link?: string
     emissions_kgco2e: number | null
   }>
   documents?: Array<{
@@ -643,7 +695,32 @@ export interface ScenarioRecord {
   scenario_total_kgco2e: number | null
   reduction_kgco2e: number | null
   reduction_rate: number | null
-  roi: Record<string, unknown> | null
+  roi: ROIResponse | null
+  assumptions?: ScenarioRates | null
+}
+
+export interface ScenarioRates {
+  electricity_saving_rate: number
+  electricity_substitution_rate: number
+  procurement_reduction_rate: number
+}
+
+export type ScenarioFinance = Required<Omit<ROIRequestPayload, 'annual_reduction_kgco2e'>>
+
+export interface ScenarioProjection {
+  historical: Array<{ period: string; kgco2e: number }>
+  forecast: Array<{ period: string; baseline_kgco2e: number; scenario_kgco2e: number }>
+}
+
+export interface ScenarioPreviewData {
+  baseline_run_id: string
+  baseline_total_kgco2e: number
+  scenario_total_kgco2e: number
+  reduction_kgco2e: number
+  reduction_rate: number
+  projection: ScenarioProjection
+  roi?: ROIResponse
+  assumptions: ScenarioRates
 }
 
 export interface ScenarioRunPayload {
@@ -651,7 +728,10 @@ export interface ScenarioRunPayload {
   scenario_id?: string
   scenario_name?: string
   electricity_saving_rate?: number
+  electricity_substitution_rate?: number
   procurement_reduction_rate?: number
+  forecast_months?: number
+  finance?: ScenarioFinance
   baseline_run_id?: string
   factor_set?: string
 }
@@ -672,6 +752,8 @@ export interface ROIResponse {
   annual_saving: number
   annual_reduction_kgco2e: number
   annual_carbon_revenue: number
+  carbon_income_included?: boolean
+  carbon_price?: number
   annual_net_cash_flow: number
   project_life: number
   discount_rate: number
@@ -689,6 +771,8 @@ export interface ROIResponse {
 }
 
 export interface TrajectoryResponse {
+  historical_count: number
+  forecast_count: number
   labels: string[]
   bau: number[]
   interventions: Array<{ scenario_id: string; scenario_name: string; curve: number[] }>
@@ -699,7 +783,7 @@ export interface TrajectoryResponse {
  * 十一、供应链协同
  * ============================================================ */
 
-export type RiskLevel = 'red' | 'yellow' | 'green'
+export type RiskLevel = 'red' | 'yellow' | 'green' | 'unknown'
 
 export interface SupplierRecord {
   id: number
@@ -766,10 +850,18 @@ export interface HeatmapNode {
   /** 节点自报碳强度；未填报的供应商为 null */
   carbon_intensity: number | null
   annual_emissions?: number | null
+  updated_at?: string | null
   /** GNN 传播后的碳强度，展示以它为准 */
-  propagated_intensity: number
+  propagated_intensity: number | null
   risk_level: RiskLevel
   estimated: boolean
+}
+
+export interface SupplierEvidence {
+  node: HeatmapNode
+  thresholds: { low: number; high: number }
+  relationships: Array<{ id: string; name: string; tier: number }>
+  submissions: Array<{ period: string; intensity: number | null; emissions_kgco2e: number }>
 }
 
 export interface HeatmapResponse {
@@ -777,6 +869,7 @@ export interface HeatmapResponse {
   adjacency: number[][]
   statistics: Record<RiskLevel, number>
   layers?: number
+  thresholds?: { low: number; high: number }
 }
 
 export interface CarbonQuota {
@@ -804,6 +897,7 @@ export interface ReductionPlanRecord {
   progress: number
   status: string
   deadline: string | null
+  overdue?: boolean
 }
 
 export interface ReductionPlanCreatePayload {
@@ -895,6 +989,7 @@ export interface ReportSummary {
 }
 
 export interface ReportDetail extends ReportSummary {
+  artifacts?: Array<{ format: ReportFormat; sha256: string; size_bytes: number; archived_at: string }>
   language: string
   run_id: string | null
   content: Record<string, unknown> | null

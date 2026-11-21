@@ -22,7 +22,17 @@ from .api import (
     companies,
     dashboard,
     documents,
+    energy,
+    assurance,
+    factory,
+    period_work,
     factors,
+    inventory,
+    organization,
+    disclosure,
+    studies,
+    company_factors,
+    integrations,
     products,
     records,
     reports,
@@ -33,7 +43,7 @@ from .api import (
 )
 from .jobs import start_worker, stop_worker
 from .rate_limit import limiter
-from .security import decode_access_token
+from .security import JWTError, decode_access_token
 from .metrics import HTTP_LATENCY, HTTP_REQUESTS, metrics_response, path_group
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
@@ -50,6 +60,20 @@ FRONTEND_INDEX = FRONTEND_DIST / "index.html"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    if settings.DB_TENANT_ISOLATION_ENABLED:
+        from .tenant_security import install_policies
+
+        install_policies(engine)
+    from .services.quota_ledger import install_quota_ledger
+    with engine.begin() as connection:
+        install_quota_ledger(connection)
+    from .services.history_migration import migrate
+
+    migrate()
+    from .services.research_catalog import load_reference_catalog
+    load_reference_catalog()
+    from .services.domain_registry import initialize
+    initialize()
     start_worker()
     yield
     stop_worker()
@@ -65,7 +89,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
+    allow_credentials=settings.cors_origin_list != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -75,8 +99,11 @@ app.add_middleware(
 async def audit_middleware(request: Request, call_next):
     """全量操作审计：记录所有写操作（方法/路径/操作人/状态码）。"""
     response = await call_next(request)
-    if request.method in ("POST", "PUT", "PATCH", "DELETE") and request.url.path.startswith(settings.API_PREFIX):
-        from .models import AuditLog
+    path = request.url.path
+    if (request.method in ("POST", "PUT", "PATCH", "DELETE")
+            and path.startswith(settings.API_PREFIX)
+            and path != f"{settings.API_PREFIX}/simulator/preview"):
+        from .models import AuditLog, User
 
         user_id = None
         auth = request.headers.get("authorization", "")
@@ -86,13 +113,14 @@ async def audit_middleware(request: Request, call_next):
                 user_id = int(payload.get("sub"))
             except Exception:  # noqa: BLE001
                 user_id = None
+        route = getattr(request.scope.get("route"), "path", settings.API_PREFIX)
         db = SessionLocal()
         try:
             db.add(AuditLog(
-                action=f"{request.method} {request.url.path}",
-                actor_user_id=user_id,
+                action=f"{request.method} {route}"[:64],
+                actor_user_id=user_id if user_id is not None and db.get(User, user_id) else None,
                 source_ip=request.client.host if request.client else None,
-                detail={"status_code": response.status_code},
+                detail={"status_code": response.status_code, "path": path[:512]},
             ))
             db.commit()
         finally:
@@ -102,14 +130,25 @@ async def audit_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    """按客户端 IP 限流（进程内/Redis，多副本一致）。"""
+    """Limit API requests while letting static assets and SPA routes load freely."""
     path = request.url.path
-    if path in ("/", "/healthz", "/metrics") or path.startswith(("/docs", "/openapi.json", "/redoc")):
+    if not path.startswith("/api/") or request.method == "OPTIONS":
         return await call_next(request)
+
     ip = request.client.host if request.client else "unknown"
-    if not limiter.allow(ip):
+    key = f"ip:{ip}"
+    if not path.startswith(f"{settings.API_PREFIX}/auth/"):
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() == "bearer" and token:
+            try:
+                subject = int(decode_access_token(token).get("sub"))
+                key = f"user:{subject}"
+            except (JWTError, TypeError, ValueError):
+                pass
+    if not limiter.allow(key):
         return JSONResponse(status_code=429, content={"detail": "请求过于频繁，请稍后再试"})
     return await call_next(request)
+
 
 
 @app.middleware("http")
@@ -131,8 +170,18 @@ for router in (
     companies.router,
     factors.router,
     documents.router,
+    energy.router,
+    assurance.router,
+    factory.router,
+    period_work.router,
     records.router,
     calculations.router,
+    inventory.router,
+    organization.router,
+    disclosure.router,
+    studies.router,
+    company_factors.router,
+    integrations.router,
     products.router,
     dashboard.router,
     audit.router,
@@ -165,6 +214,12 @@ def index():
 
 @app.get("/healthz", tags=["健康检查"])
 def healthz():
+    from sqlalchemy import text
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception:
+        return JSONResponse(status_code=503, content={"status": "not_ready"})
     return {"status": "healthy", "algorithm_version": settings.ALGORITHM_VERSION}
 
 
@@ -184,6 +239,8 @@ if FRONTEND_INDEX.exists():
         # 此处返回 404 而不是落入 SPA 回退（双保险，网关 Caddy 同样拦截）。
         if full_path in ("docs", "redoc", "openapi.json") or \
                 full_path.startswith(("docs/", "redoc/")):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        if full_path == "api" or full_path.startswith("api/"):
             return JSONResponse(status_code=404, content={"detail": "Not Found"})
         dist_root = FRONTEND_DIST.resolve()
         candidate = (FRONTEND_DIST / full_path).resolve()

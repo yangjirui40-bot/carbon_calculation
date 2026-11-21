@@ -209,3 +209,29 @@
     font-size: 7pt;
   }
 }
+
+.formal-archive {
+  max-width: 54rem;
+  margin: 1rem auto;
+  padding: 0.75rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.formal-archive dl, .formal-archive p {
+  margin: 0.375rem 0 0;
+}
+
+.formal-archive dl > div + div {
+  margin-top: 0.375rem;
+}
+
+.formal-archive dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media print {
+  .formal-archive { display: none; }
+}

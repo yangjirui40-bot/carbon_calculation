@@ -1,9 +1,4 @@
-"""发票验真适配器：对接税务授权查验服务（OpenAPI 兼容可插拔）。
-
-生产环境需采购国家税务总局授权的第三方发票查验 API（如阿里云/腾讯云/合合信息）。
-配置 .env：INVOICE_VERIFY_API_BASE / INVOICE_VERIFY_API_KEY / INVOICE_VERIFY_ENABLED=true。
-未配置时单据标记 verified_status=unverified，复核入库需人工确认（系统提示）。
-"""
+"""Adapter for an explicitly configured, authorized invoice verification service."""
 from __future__ import annotations
 
 import hashlib
@@ -13,38 +8,42 @@ import httpx
 from ...config import settings
 
 
-def verify_invoice(fields: dict) -> dict:
-    """查验发票：返回 {status: verified|failed|unverified, detail}。
-
-    接口契约（OpenAPI 风格）：POST {base}/verify
-    {"invoice_no":.., "invoice_code":.., "date":.., "amount":.., "checksum":..}
-    → {"valid": true/false, "message": "..."}
-    """
-    if not getattr(settings, "INVOICE_VERIFY_API_BASE", "") or not getattr(settings, "INVOICE_VERIFY_API_KEY", ""):
-        return {"status": "unverified", "detail": "未配置发票查验 API（INVOICE_VERIFY_API_BASE/KEY）"}
-
-    checksum = hashlib.sha256(
-        f"{fields.get('invoice_no', '')}|{fields.get('total_amount', '')}".encode("utf-8")
-    ).hexdigest()[:16]
-    payload = {
-        "invoice_no": fields.get("invoice_no"),
-        "date": fields.get("invoice_date"),
-        "amount": fields.get("total_amount"),
-        "checksum": checksum,
-    }
+def verification_configured():
+    if not settings.INVOICE_VERIFY_ENABLED or not settings.INVOICE_VERIFY_API_KEY:
+        return False
     try:
-        resp = httpx.post(
+        endpoint = httpx.URL(settings.INVOICE_VERIFY_API_BASE)
+    except httpx.InvalidURL:
+        return False
+    return endpoint.scheme == "https" and bool(endpoint.host) and not (
+        endpoint.userinfo or endpoint.query or endpoint.fragment
+    )
+
+
+def verify_invoice(fields: dict) -> dict:
+    """Let unavailable providers and incomplete OCR data proceed to manual review."""
+    if not verification_configured():
+        return {"status": "unverified", "detail": "未配置发票查验服务，需人工核对"}
+    required = ("invoice_no", "invoice_date", "total_amount")
+    if any(fields.get(key) in (None, "") for key in required):
+        return {"status": "unverified", "detail": "请先核对发票号码、日期和金额"}
+    checksum = hashlib.sha256(
+        f"{fields['invoice_no']}|{fields['total_amount']}".encode("utf-8")
+    ).hexdigest()[:16]
+    try:
+        reply = httpx.post(
             f"{settings.INVOICE_VERIFY_API_BASE.rstrip('/')}/verify",
             headers={"Authorization": f"Bearer {settings.INVOICE_VERIFY_API_KEY}"},
-            json=payload,
-            timeout=30,
+            json={"invoice_no": fields["invoice_no"], "date": fields["invoice_date"],
+                  "amount": fields["total_amount"], "checksum": checksum},
+            timeout=15,
         )
-        resp.raise_for_status()
-        data = resp.json()
-        return {"status": "verified" if data.get("valid") else "failed",
-                "detail": data.get("message", "")}
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "unverified", "detail": f"查验服务调用失败：{exc}"}
-
-
-__all__ = ["verify_invoice"]
+        reply.raise_for_status()
+        data = reply.json()
+    except (httpx.HTTPError, ValueError):
+        return {"status": "unverified", "detail": "查验服务暂不可用，可稍后重试或人工核对"}
+    if not isinstance(data, dict) or type(data.get("valid")) is not bool:
+        return {"status": "unverified", "detail": "查验结果格式异常，需人工核对"}
+    if data["valid"]:
+        return {"status": "verified", "detail": "授权查验服务返回有效"}
+    return {"status": "failed", "detail": "授权查验服务未通过，请复核票据"}

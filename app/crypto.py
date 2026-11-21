@@ -24,22 +24,28 @@ def _key() -> bytes:
     return hashlib.sha256(settings.data_enc_key.encode("utf-8")).digest()
 
 
+def seal_bytes(data: bytes, purpose: bytes | None) -> bytes:
+    nonce = os.urandom(12)
+    return nonce + AESGCM(_key()).encrypt(nonce, data, purpose)
+
+
+def open_bytes(data: bytes, purpose: bytes | None) -> bytes:
+    return AESGCM(_key()).decrypt(data[:12], data[12:], purpose)
+
+
 def store_secret(obj) -> dict:
     """将对象加密后包装为可入库的 JSON 标记结构。"""
     if obj is None:
         return None
     data = json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8")
-    nonce = os.urandom(12)
-    ct = AESGCM(_key()).encrypt(nonce, data, None)
-    return {_ENV_MARK: _ENV_ALGO, "v": base64.b64encode(nonce + ct).decode("ascii")}
+    return {_ENV_MARK: _ENV_ALGO, "v": base64.b64encode(seal_bytes(data, None)).decode("ascii")}
 
 
 def read_secret(value):
     """读取入库值：若为加密标记则解密，否则原样返回（兼容历史明文）。"""
     if isinstance(value, dict) and value.get(_ENV_MARK) == _ENV_ALGO and value.get("v"):
         raw = base64.b64decode(value["v"])
-        nonce, ct = raw[:12], raw[12:]
-        data = AESGCM(_key()).decrypt(nonce, ct, None)
+        data = open_bytes(raw, None)
         return json.loads(data.decode("utf-8"))
     return value
 

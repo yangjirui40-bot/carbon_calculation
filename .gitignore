@@ -11,3 +11,12 @@ _piptmp/
 data/io/downloads/
 tests/fixtures/corpus/real_*
 *.sql
+
+.env.local
+.env.production
+本机账号_勿公开.txt
+云端账号_勿公开.txt
+# 第三方或待核实授权的数据与本机验收过程文件
+/data/io/CEADs_*.xlsm
+/docs/验收证据/
+/docs/碳速算_企业版实测结果.json

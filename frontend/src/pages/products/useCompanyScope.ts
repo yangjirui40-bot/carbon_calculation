@@ -19,7 +19,7 @@ export function useCompanyScope() {
 
   const canSelectCompany = sessionRole === 'admin' || sessionRole === 'auditor'
   const effectiveCompanyId = canSelectCompany
-    ? (sessionCompanyId ?? contextCompanyId)
+    ? (contextCompanyId ?? sessionCompanyId)
     : sessionCompanyId
   const pickerVisible = sessionCompanyId === null && canSelectCompany
   const canWrite = sessionRole === 'admin' || sessionRole === 'enterprise'

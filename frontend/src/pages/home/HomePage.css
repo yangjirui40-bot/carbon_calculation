@@ -1,37 +1,40 @@
-/* 首页 · 瑞士风格（与工作台同一套配色与排版语言） */
-
-@import '../../styles/swiss-tokens.css';
-
-.home-swiss {
-  min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-.home-wrap {
-  max-width: none;
-  margin: 0;
-  padding: 0 44px;
-  min-height: 100vh;
-}
-
-.home-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  margin-top: 46px;
-  padding: 16px 0 22px;
-  border-top: 1px solid var(--rule);
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-}
-
-@media (max-width: 760px) {
-  .home-wrap {
-    padding: 0 24px;
-  }
-}
+.carbon-home { color: var(--ink); background: var(--paper-raised); min-height: 100vh; }
+.carbon-home__frame { max-width: 1248px; padding: 0 clamp(20px, 5vw, 64px); margin-inline: auto; }
+.carbon-home__header { background: var(--navy); border-bottom: 1px solid var(--navy-border); color: var(--on-navy); }
+.carbon-home__header .carbon-home__frame, .carbon-home__brand, .carbon-home__header nav { display: flex; align-items: center; }
+.carbon-home__header .carbon-home__frame { min-height: 63px; justify-content: space-between; gap: 12px; }
+.carbon-home__brand { gap: 9px; color: inherit; font-size: 19px; font-weight: 730; }
+.carbon-home__brand:hover { color: inherit; }
+.carbon-home__brand > span { display: grid; place-items: center; width: 32px; height: 32px; background: var(--signal); color: var(--navy); border-radius: 8px; }
+.carbon-home__header nav { gap: clamp(13px, 3vw, 32px); }
+.carbon-home__header nav a { color: var(--on-navy); font-size: 13px; }
+.carbon-home__header nav a:hover { text-decoration: underline; }
+.carbon-home__hero { background: var(--navy); color: var(--on-navy); }
+.carbon-home__hero-content { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); align-items: center; gap: clamp(26px, 7vw, 100px); padding-block: clamp(34px, 6.5vw, 88px); }
+.carbon-home__audience { margin: 0 0 12px; color: var(--signal); font-size: 14px; }
+.carbon-home__hero h1 { margin: 0; font-weight: 750; line-height: 1.16; letter-spacing: -.045em; font-size: clamp(37px, 5.6vw, 72px); }
+.carbon-home__lead { max-width: 420px; margin: 18px 0 24px; color: var(--on-navy-muted); font-size: clamp(14px, 1.3vw, 16px); line-height: 1.9; }
+.carbon-home__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.home-cta { display: inline-flex; align-items: center; gap: 13px; min-height: 44px; padding: 0 17px; border-radius: 7px; background: var(--signal); color: var(--navy); border: 1px solid var(--signal); font-size: 14px; font-weight: 650; }
+.home-cta:hover { background: var(--on-navy); color: var(--navy); }
+.home-cta.is-ghost { background: transparent; border-color: var(--navy-border); color: var(--on-navy); }
+.home-cta.is-ghost:hover { background: var(--navy-raised); }
+.carbon-home__trace { padding: 23px 25px; background: linear-gradient(135deg, var(--navy-raised), var(--navy)); border: 1px solid var(--navy-border); border-radius: 14px; }
+.carbon-home__trace > p { color: var(--on-navy-muted); font-size: 13px; margin: 0 0 16px; }
+.carbon-home__trace-row { position: relative; display: flex; align-items: center; gap: 13px; padding: 12px 0; }
+.carbon-home__trace-row:not(:last-child)::after { content: ''; position: absolute; left: 19px; top: calc(50% + 20px); height: 25px; border-left: 1px solid var(--navy-border); }
+.carbon-home__trace-row > span { display: grid; place-items: center; width: 38px; height: 38px; font-size: 17px; color: var(--signal); border: 1px solid var(--navy-border); background: var(--navy); border-radius: 8px; }
+.carbon-home__trace-row b { display: block; }
+.carbon-home__trace-row small { display: block; color: var(--on-navy-muted); margin-top: 3px; }
+.carbon-home__modules { padding-block: 30px 36px; scroll-margin-top: 12px; }
+.carbon-home__modules h2 { margin: 0 0 17px; font-size: 24px; }
+.carbon-home__module-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--rule); column-gap: 26px; }
+.carbon-home__module-grid a { display: grid; grid-template-columns: 32px 1fr 14px; gap: 10px; align-items: start; padding: 17px 0; border-bottom: 1px solid var(--rule); color: var(--ink); }
+.carbon-home__module-grid a:hover { color: var(--accent); }
+.carbon-home__module-icon { display: grid; place-items: center; width: 32px; height: 32px; color: var(--accent); border-radius: 7px; background: var(--accent-soft); font-size: 16px; }
+.carbon-home__arrow { color: var(--accent); margin-top: 5px; }
+.carbon-home__module-grid h3 { margin: 0; font-size: 15px; }
+.carbon-home__module-grid p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.carbon-home__foot { padding-block: 14px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 12px; }
+@media (max-width: 850px) { .carbon-home__module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 630px) { .carbon-home__hero-content, .carbon-home__module-grid { grid-template-columns: 1fr; } .carbon-home__trace { padding: 17px; } }

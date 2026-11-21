@@ -45,7 +45,7 @@ export const FACTOR_SCOPE_OPTIONS = [
 
 /** 页面统一口径：项目因子 / 官方因子（不在页面使用后端 is_demo 的原始措辞） */
 export function caliberLabel(isDemo: boolean): string {
-  return isDemo ? '项目因子' : '官方因子'
+  return isDemo ? '演示因子' : '来源因子'
 }
 
 /**
@@ -53,7 +53,7 @@ export function caliberLabel(isDemo: boolean): string {
  * 页面按项目规则不出现“演示/模拟/非审计”，这里只做展示层清理，不回写数据。
  */
 export function displayOrigin(origin: string | null | undefined, isDemo: boolean): string {
-  const cleaned = (origin ?? '').replace(/演示|模拟|非审计/g, '').trim()
+  const cleaned = (origin ?? '').trim()
   if (cleaned) return cleaned
   return isDemo ? '项目设定' : '—'
 }

@@ -6,15 +6,18 @@ import hashlib
 import time
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Response
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from ..models.enterprise_controls import RawObject, DocumentPage, ExtractedField
 from ..crypto import read_secret, store_secret
 from ..database import get_db
 from ..deps import check_company_access, get_current_user
 from ..jobs import register_handler, submit_job
-from ..models import BusinessRecord, Job, SourceDocument, User
+from ..models import BusinessRecord, Job, SourceDocument, User, utcnow
+from ..models.operational_history import DocumentParseRun, DocumentReview, InvoiceVerification
 from ..services.billing_service import enforce_quota
 from ..storage import get_storage
 
@@ -22,6 +25,8 @@ router = APIRouter(prefix="/documents", tags=["智能数据解析"])
 
 
 class ReviewRequest(BaseModel):
+    site_id: int | None = None
+    org_unit_id: int | None = None
     period: str | None = None
     category: str | None = None
     scope: str | None = None
@@ -54,11 +59,17 @@ def _job_parse_document(payload: dict) -> dict:
     from ..services.document_parser import parse_document
 
     db = SessionLocal()
+    attempt_id = None
     try:
         doc = db.get(SourceDocument, int(payload["document_id"]))
         if doc is None:
             return {"ok": False, "error": "document not found"}
         doc.parse_status = "parsing"
+        attempt = DocumentParseRun(document_id=doc.id, job_id=payload.get("job_id"),
+                                   attempt=payload.get("attempt", 1), state="running")
+        db.add(attempt)
+        db.flush()
+        attempt_id = attempt.id
         db.commit()
 
         image_bytes = get_storage().load(doc.file_path)
@@ -75,6 +86,10 @@ def _job_parse_document(payload: dict) -> dict:
                 "fields": result["extracted_fields"],
                 "record_hint": result["record_hint"],
                 "fingerprint": result.get("fingerprint"),
+                "words": result.get("words", []),
+                "raw_fields": result.get("raw_fields", {}),
+                "confidence": result.get("confidence", {}),
+                "extraction_methods": result.get("extraction_methods", {}),
             }
         )
         doc.correction_log = result["correction_log"] + [
@@ -85,14 +100,44 @@ def _job_parse_document(payload: dict) -> dict:
         engines = [e for e in (result["ocr_engine"], result.get("ser_engine"), result.get("layout_engine")) if e]
         doc.ocr_engine = " + ".join(engines)
         doc.parse_status = "parsed"
+        attempt.state = "parsed"
+        for key, value in result["extracted_fields"].items():
+            db.add(ExtractedField(parse_id=attempt.id, company_id=doc.company_id, field_name=key,
+                   protected_values=store_secret({"raw": result.get("raw_fields", {}).get(key), "accepted": value}),
+                   method=result.get("extraction_methods", {}).get(key), confidence=result["confidence"].get(key)))
+        attempt.engine = doc.ocr_engine
+        attempt.completed_at = utcnow()
         db.commit()
         return {"ok": True, "corrections": result["corrections_count"],
                 "engine": doc.ocr_engine}
+    except Exception:
+        db.rollback()
+        failed = db.get(SourceDocument, int(payload["document_id"]))
+        if failed is not None:
+            failed.parse_status = "failed"
+        if attempt_id:
+            attempt = db.get(DocumentParseRun, attempt_id)
+            if attempt:
+                attempt.state = "failed"
+                attempt.completed_at = utcnow()
+        db.commit()
+        raise
     finally:
         db.close()
 
 
 register_handler("document_parse", _job_parse_document)
+
+
+def can_read_finance(db,user,cid):
+    from ..services.organization import is_company_admin
+    return user.role == "auditor" or is_company_admin(db,user,cid)
+
+
+def check_document_access(db,user,doc,write=False):
+    check_company_access(db,user,doc.company_id,write=write)
+    if doc.doc_type=="revenue_evidence" and not can_read_finance(db,user,doc.company_id):
+        raise HTTPException(403,"营业收入证明仅对企业管理员和审计人员可见")
 
 
 @router.post("/upload", status_code=201)
@@ -104,8 +149,21 @@ async def upload_document(
     user: User = Depends(get_current_user),
 ):
     check_company_access(db, user, company_id, write=True)
+    if doc_type=="revenue_evidence" and not can_read_finance(db,user,company_id):
+        raise HTTPException(403,"请由企业管理员上传营业收入证明")
+    content = await file.read(20 * 1024 * 1024 + 1)
+    if len(content) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="单个文件不可超过20MiB")
+    if not content:
+        raise HTTPException(status_code=422, detail="文件为空")
+    if doc_type not in ("invoice", "electricity_bill", "energy_certificate", "revenue_evidence"):
+        raise HTTPException(status_code=422, detail="请选择发票、电费单、绿电凭证或收入证明")
+    try:
+        from ..services.document_media import render_preview
+        preview, sizes = render_preview(content)
+    except Exception:
+        raise HTTPException(status_code=422, detail="无法读取文件；请上传有效图像或1—10页、20MiB内的PDF")
     enforce_quota(db, company_id, "document")
-    content = await file.read()
     content_hash = hashlib.sha256(content).hexdigest()
     # 唯一性拦截：同内容单据直接复用已有档案
     duplicate = db.query(SourceDocument).filter(
@@ -113,15 +171,20 @@ async def upload_document(
     ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else "bin"
     key = f"companies/{company_id}/documents/{uuid.uuid4().hex}.{ext}"
     get_storage().save(key, content)
+    get_storage().save(key + ".preview.png", preview)
     doc = SourceDocument(
         company_id=company_id, doc_type=doc_type, file_name=file.filename,
         file_path=key, file_ext=ext, parse_status="uploaded", content_hash=content_hash,
     )
     db.add(doc)
+    db.flush()
+    db.add(RawObject(document_id=doc.id, sha256=content_hash, size_bytes=len(content)))
+    db.add_all(DocumentPage(document_id=doc.id, page_number=i, width_px=w, height_px=h)
+               for i,(w,h) in enumerate(sizes,1))
     db.commit()
     db.refresh(doc)
     return {**_to_dict(doc),
-            "duplicate_hint": f"与单据 #{duplicate.id} 内容完全一致，疑似重复上传" if duplicate else None}
+            "duplicate_hint": f"与单据 #{duplicate.id} 内容完全一致，疑似重复上传" if duplicate and (duplicate.doc_type!="revenue_evidence" or can_read_finance(db,user,company_id)) else None}
 
 
 @router.get("")
@@ -132,6 +195,8 @@ def list_documents(company_id: int | None = None, db: Session = Depends(get_db),
     q = db.query(SourceDocument).order_by(SourceDocument.id.desc())
     if cid:
         q = q.filter(SourceDocument.company_id == cid)
+    if not can_read_finance(db,user,cid):
+        q=q.filter(SourceDocument.doc_type!="revenue_evidence")
     return [_to_dict(d) for d in q.limit(200).all()]
 
 
@@ -146,6 +211,7 @@ def review_queue(company_id: int | None = None, confidence_threshold: float = 0.
                                         SourceDocument.review_status != "confirmed")
     if cid:
         q = q.filter(SourceDocument.company_id == cid)
+    q=q.filter(SourceDocument.doc_type!="revenue_evidence")
     docs = q.all()
     queue = []
     for d in docs:
@@ -171,8 +237,27 @@ def get_document(doc_id: int, db: Session = Depends(get_db), user: User = Depend
     doc = db.get(SourceDocument, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="单据不存在")
-    check_company_access(db, user, doc.company_id)
+    check_document_access(db, user, doc)
     return _to_dict(doc)
+
+
+@router.get("/{doc_id}/preview")
+def document_preview(doc_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    doc = db.get(SourceDocument, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="单据不存在")
+    check_document_access(db, user, doc)
+    storage = get_storage()
+    path = doc.file_path + ".preview.png"
+    try:
+        if storage.exists(path):
+            content = storage.load(path)
+        else:
+            from ..services.document_media import preview_png
+            content = preview_png(storage.load(doc.file_path))
+    except Exception:
+        raise HTTPException(status_code=422, detail="原始文件无法预览；请重新上传或联系管理员")
+    return Response(content=content, media_type="image/png", headers={"Cache-Control": "private, no-store"})
 
 
 @router.post("/{doc_id}/parse")
@@ -182,7 +267,11 @@ def parse_document_async(doc_id: int, wait: bool = False, db: Session = Depends(
     doc = db.get(SourceDocument, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="单据不存在")
-    check_company_access(db, user, doc.company_id, write=True)
+    check_document_access(db, user, doc, write=True)
+    if doc.doc_type in ("energy_certificate","revenue_evidence"):
+        raise HTTPException(422, "证明文件请在对应的绿电或融资材料业务中使用")
+    if doc.review_status == "confirmed":
+        raise HTTPException(status_code=409, detail="已入库单据不能覆盖重解析，请保留原始核算证据")
     job = submit_job("document_parse", {"document_id": doc_id})
     if not wait:
         return {"job_id": job.id, "status": "queued", "document_id": doc_id}
@@ -236,10 +325,36 @@ def review_document(doc_id: int, payload: ReviewRequest, db: Session = Depends(g
     doc = db.get(SourceDocument, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="单据不存在")
-    check_company_access(db, user, doc.company_id, write=True)
+    check_document_access(db, user, doc, write=True)
+    from ..models import Company
+    db.query(Company).filter(Company.id == doc.company_id).with_for_update().one()
+    doc = db.query(SourceDocument).filter(SourceDocument.id == doc_id).with_for_update().populate_existing().one()
+    if payload.review_status not in ("confirmed", "rejected"):
+        raise HTTPException(status_code=422, detail="无效复核状态")
+    if doc.doc_type in ("energy_certificate","revenue_evidence"):
+        raise HTTPException(422, "证明文件请在对应的绿电或融资材料业务中使用")
+    if doc.review_status == "confirmed":
+        return {**_to_dict(doc), "already_confirmed": True, "verify_hint": "此单据已入库，未重复生成业务记录"}
     duplicate_hint = _duplicate_check(db, doc)
 
     if payload.review_status == "confirmed":
+        if doc.content_hash:
+            duplicate = db.query(SourceDocument).filter(SourceDocument.company_id == doc.company_id, SourceDocument.content_hash == doc.content_hash, SourceDocument.review_status == "confirmed", SourceDocument.id != doc.id).first()
+            if duplicate:
+                raise HTTPException(status_code=409, detail=f"相同原始文件已由单据#{duplicate.id}入库，禁止重复计入排放")
+        candidate_secret = read_secret(doc.extracted_fields) or {}
+        candidate_fields = {**candidate_secret.get("fields", {}), **(payload.fields_override or {})}
+        import unicodedata
+        def identity(fields):
+            def clean(value): return "".join(unicodedata.normalize("NFKC", str(value or "")).split()).casefold()
+            number, vendor = clean(fields.get("invoice_no")), clean(fields.get("vendor"))
+            return (number, vendor, clean(fields.get("invoice_date"))) if number and vendor else None
+        key = identity(candidate_fields) if doc.doc_type == "invoice" else None
+        if key:
+            recent = db.query(SourceDocument).filter(SourceDocument.company_id == doc.company_id, SourceDocument.review_status == "confirmed", SourceDocument.doc_type == "invoice", SourceDocument.id != doc.id).all()
+            for other in recent:
+                if identity((read_secret(other.extracted_fields) or {}).get("fields", {})) == key:
+                    raise HTTPException(status_code=409, detail=f"相同销售方、发票号和日期已由单据#{other.id}入库，请核查重复票据")
         if doc.verified_status == "failed":
             raise HTTPException(status_code=400,
                                 detail="发票验真未通过，禁止入库（请核对后人工修正字段并重新验真）")
@@ -249,6 +364,9 @@ def review_document(doc_id: int, payload: ReviewRequest, db: Session = Depends(g
             hint = secret.get("record_hint") or {}
         fields = (secret or {}).get("fields", {}) if isinstance(secret, dict) else {}
         if payload.fields_override:
+            import math
+            if any(isinstance(v, float) and not math.isfinite(v) for v in payload.fields_override.values()):
+                raise HTTPException(status_code=422, detail="修订数值必须是有限数值")
             fields = {**fields, **payload.fields_override}  # 人工复核修正
             hint = build_record_hint_from_fields(doc.doc_type, fields)
 
@@ -263,10 +381,30 @@ def review_document(doc_id: int, payload: ReviewRequest, db: Session = Depends(g
         if not (category and scope and factor_id) or (quantity is None and amount is None):
             raise HTTPException(status_code=400, detail="缺少可入库的核算字段（category/scope/factor_id/quantity 或 amount）")
 
+        import re
+        if not period or not re.fullmatch(r"[1-9][0-9]{3}-(0[1-9]|1[0-2])", period):
+            raise HTTPException(status_code=422, detail="请填写真实核算月份，格式为YYYY-MM")
+        from ..services.inventory import require_open_period
+        require_open_period(db, doc.company_id, period, user.id)
+        from ..services.organization import require_period_location, set_activity_location, validate_location
+        from ..services.activity import apply_org_names, create_activity_revision
+        require_period_location(db, doc.company_id, period, payload.site_id)
+        site, unit_obj = validate_location(db, doc.company_id, payload.site_id, payload.org_unit_id)
+        from ..services import load_factors_from_db
+        from models.core import calculate_record, CalculationError
+        factors = load_factors_from_db(db, company_id=doc.company_id)
+        try:
+            calculate_record({"id": "review", "period": period, "review_status": "confirmed", "category": category, "scope": scope, "factor_id": factor_id, "quantity": quantity, "amount": amount, "unit": unit, "currency": payload.currency}, factors)
+        except CalculationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        secret = dict(secret or {})
+        secret["fields"] = fields
+        secret["record_hint"] = {"period": period, "category": category, "scope": scope, "factor_id": factor_id, "quantity": quantity, "amount": amount, "unit": unit}
+        doc.extracted_fields = store_secret(secret)
         record = BusinessRecord(
             record_no=f"{doc.file_name.split('.')[0][:24]}-{uuid.uuid4().hex[:6]}",
             company_id=doc.company_id,
-            period=period or "1970-01",
+            period=period,
             category=category,
             scope=scope,
             quantity=quantity,
@@ -278,18 +416,27 @@ def review_document(doc_id: int, payload: ReviewRequest, db: Session = Depends(g
             source="photo",
             document_id=doc.id,
         )
+        set_activity_location(record, site, unit_obj)
+        apply_org_names(db, record, unit_obj)
+        if site:
+            record.revisions = [create_activity_revision(record, user.id, "凭证确认入账", version=1)]
         db.add(record)
         doc.review_status = "confirmed"
     else:
         doc.review_status = "rejected"
     doc.reviewed_by_user_id = user.id
     doc.review_note = payload.note
+    last_version = db.query(func.max(DocumentReview.version_no)).filter_by(document_id=doc.id).scalar() or 0
+    parsed = db.query(DocumentParseRun.id).filter_by(document_id=doc.id, state="parsed").order_by(DocumentParseRun.id.desc()).first()
+    db.add(DocumentReview(document_id=doc.id, parse_run_id=parsed[0] if parsed else None,
+                          reviewer_id=user.id, version_no=last_version+1, decision=doc.review_status,
+                          overrides=store_secret(payload.model_dump(exclude_none=True))))
     db.commit()
     db.refresh(doc)
     if payload.review_status == "confirmed":
         try:
             from ..services.olap import refresh_olap
-            refresh_olap(db)
+            refresh_olap(db, doc.company_id)
         except Exception:  # noqa: BLE001
             db.rollback()
     return {**_to_dict(doc), "duplicate_hint": duplicate_hint,
@@ -307,12 +454,43 @@ def verify_document(doc_id: int, db: Session = Depends(get_db), user: User = Dep
     doc = db.get(SourceDocument, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="单据不存在")
-    check_company_access(db, user, doc.company_id, write=True)
+    check_document_access(db, user, doc, write=True)
+    if doc.doc_type != "invoice":
+        raise HTTPException(status_code=422, detail="发票查验只适用于发票")
+    doc = db.query(SourceDocument).filter(SourceDocument.id == doc_id).with_for_update().populate_existing().first()
+    if doc is None:
+        raise HTTPException(status_code=404, detail="单据不存在")
     secret = read_secret(doc.extracted_fields)
     fields = (secret or {}).get("fields", {}) if isinstance(secret, dict) else {}
     from ..services.ai.invoice_verify import verify_invoice
 
     result = verify_invoice(fields)
-    doc.verified_status = result["status"]
+    if result["status"] != "unverified":
+        doc.verified_status = result["status"]
+    db.add(InvoiceVerification(document_id=doc.id, requested_by=user.id,
+                               state=result["status"], detail=result["detail"]))
     db.commit()
-    return {**_to_dict(doc), "verify_detail": result["detail"]}
+    return {**_to_dict(doc), "verify_detail": result["detail"], "verify_attempt_status": result["status"]}
+
+
+@router.get("/{doc_id}/history")
+def document_history(doc_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    doc = db.get(SourceDocument, doc_id)
+    if not doc:
+        raise HTTPException(404, "单据不存在")
+    check_document_access(db, user, doc)
+    parses = db.query(DocumentParseRun).filter_by(document_id=doc.id).order_by(DocumentParseRun.id.desc()).limit(100)
+    reviews = db.query(DocumentReview).filter_by(document_id=doc.id).order_by(DocumentReview.version_no.desc()).limit(100)
+    verifications = db.query(InvoiceVerification).filter_by(document_id=doc.id).order_by(InvoiceVerification.id.desc()).limit(100)
+    raw = db.get(RawObject, doc.id)
+    pages = db.query(DocumentPage).filter_by(document_id=doc.id).order_by(DocumentPage.page_number)
+    return {
+        "original": {"sha256": raw.sha256, "size_bytes": raw.size_bytes} if raw else None,
+        "pages": [{"page": p.page_number, "width_px": p.width_px, "height_px": p.height_px} for p in pages],
+        "parses": [{"id": r.id, "job_id": r.job_id, "attempt": r.attempt, "state": r.state, "engine": r.engine,
+                    "started_at": r.started_at, "completed_at": r.completed_at} for r in parses],
+        "reviews": [{"version": r.version_no, "parse_id": r.parse_run_id, "decision": r.decision,
+                     "actor_id": r.reviewer_id, "at": r.decided_at} for r in reviews],
+        "verifications": [{"state": r.state, "detail": r.detail, "actor_id": r.requested_by,
+                           "at": r.checked_at} for r in verifications],
+    }

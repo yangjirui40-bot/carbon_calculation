@@ -7,32 +7,32 @@
 
 :root {
   /* ---------- 品牌色 ---------- */
-  --color-primary: #4caf50;
-  --color-primary-hover: #43a047;
-  --color-primary-active: #388e3c;
-  --color-primary-light: #c8e6c9;
-  --color-primary-bg: #f1f8e9;
+  --color-primary: #1756a4;
+  --color-primary-hover: #12498d;
+  --color-primary-active: #103f78;
+  --color-primary-light: #d5e5fb;
+  --color-primary-bg: #eaf2ff;
 
   /* ---------- 功能色 ---------- */
-  --color-success: #4caf50;
+  --color-success: #087263;
   --color-warning: #ff9800;
   --color-danger: #f44336;
   --color-info: #2196f3;
   --color-neutral: #9e9e9e;
 
   /* ---------- 中性色 ---------- */
-  --color-text-primary: #1f2937;
-  --color-text-secondary: #6b7280;
+  --color-text-primary: #132638;
+  --color-text-secondary: #526578;
   --color-text-tertiary: #9ca3af;
   --color-text-inverse: #ffffff;
-  --color-border: #e5e7eb;
-  --color-bg-page: #f5f7fa;
+  --color-border: #d9e2ed;
+  --color-bg-page: #f4f7fb;
   --color-bg-container: #ffffff;
-  --color-bg-hover: #f9fafb;
+  --color-bg-hover: #f4f7fb;
 
   /* ---------- 碳排放强度色阶（绿→红，仅大屏/热力图；中期少用） ---------- */
   --emission-1: #1b5e20;
-  --emission-2: #4caf50;
+  --emission-2: #3f9175;
   --emission-3: #cddc39;
   --emission-4: #ff9800;
   --emission-5: #f44336;
@@ -42,13 +42,13 @@
      颜色只是辅助，界面必须同时写“Scope 1/2/3”文字 */
   --scope-1: #1976d2;
   --scope-1-bg: #e3f2fd;
-  --scope-2: #43a047;
+  --scope-2: #008078;
   --scope-2-bg: #e8f5e9;
-  --scope-3: #f57c00;
-  --scope-3-bg: #fff3e0;
+  --scope-3: #7556ba;
+  --scope-3-bg: #f2edff;
 
   /* ---------- 语义色：置信度 ---------- */
-  --confidence-high: #4caf50;
+  --confidence-high: #087263;
   --confidence-high-bg: #e8f5e9;
   --confidence-mid: #ff9800;
   --confidence-mid-bg: #fff3e0;
@@ -62,7 +62,7 @@
   --status-info-bg: #e3f2fd;
   --status-review: #ff9800;
   --status-review-bg: #fff3e0;
-  --status-done: #4caf50;
+  --status-done: #087263;
   --status-done-bg: #e8f5e9;
   --status-failed: #f44336;
   --status-failed-bg: #ffebee;
@@ -74,7 +74,7 @@
 
   /* ---------- 字体 ---------- */
   --font-family-base: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
-  --font-family-number: "DIN Alternate", "Roboto Mono", Consolas, monospace;
+  --font-family-number: var(--font-family-base);
 
   --font-display: 32px;
   --font-display-line: 40px;

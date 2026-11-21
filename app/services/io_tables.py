@@ -72,9 +72,9 @@ def build_system(path: str | None = None, domestic: bool = True) -> dict:
     A = t["Z"] / np.maximum(X, 1e-12)  # A[i,j] = Z[i,j]/X[j]（列归一）
     if domestic:
         ratio = X / np.maximum(X + t["imports"], 1e-12)
-        A = A * ratio[None, :]  # 按行业进口比例折减中间投入（国内化修正）
+        A = A * ratio[:, None]  # 按行业进口比例折减中间投入（国内化修正）
     return {"A": A.tolist(), "sectors": t["sectors"], "X_wan": X.tolist(),
-            "imports_wan": t["imports"].tolist(), "domestic_adjusted": domestic}
+            "imports_wan": t["imports"].tolist(), "domestic_adjusted": bool(domestic and np.any(t["imports"] > 0))}
 
 
 def run_eiolca_42(category_amounts: dict[str, float], g: list[float] | None = None,
@@ -97,7 +97,10 @@ def run_eiolca_42(category_amounts: dict[str, float], g: list[float] | None = No
                 break
         if idx is None:
             raise ValueError(f"类别 {category} 无法映射到 42 部门目录")
-        y[idx] += float(amount)
+        value = float(amount)
+        if not np.isfinite(value) or value < 0:
+            raise ValueError("采购金额必须是非负有限数值")
+        y[idx] += value / 10000.0
         mapping_used[category] = sectors[idx]
 
     if g is None:
@@ -127,12 +130,22 @@ def load_g(path: str | None = None) -> list[float]:
             "（https://www.ceads.net/data/nation/，注册后可下载），"
             "按 42 部门对齐后保存为 g_2017.csv。"
         )
+    metadata = path.with_name(path.stem + ".metadata.json")
+    if not metadata.exists():
+        raise ValueError("缺少直接排放强度的来源和部门映射元数据")
+    import json, hashlib
+    provenance = json.loads(metadata.read_text(encoding="utf-8"))
+    if provenance.get("g_sha256") != hashlib.sha256(path.read_bytes()).hexdigest():
+        raise ValueError("排放强度文件与来源校验记录不一致")
     mapping = {}
     for row in csv.DictReader(open(path, encoding="utf-8-sig")):
         name = (row.get("部门名") or row.get("sector") or "").strip()
         val = row.get("kgco2e_per_wan") or row.get("g")
         if name and val:
-            mapping[name] = float(val)
+            value = float(val)
+            if name in mapping or not np.isfinite(value) or value < 0:
+                raise ValueError("部门强度重复或不是非负有限数值：" + name)
+            mapping[name] = value
     g = []
     for name in SECTORS_42:
         if name not in mapping:
@@ -151,10 +164,17 @@ def derive_scope3_factors(g: list[float] | None = None, path: str | None = None)
     system = build_system()
     A = np.array(system["A"])
     sectors = system["sectors"]
+    g = np.asarray(g, dtype=float)
+    if g.shape != (42,) or not np.all(np.isfinite(g)) or np.any(g < 0):
+        raise ValueError("需要42个非负有限直接排放强度")
+    if np.max(np.abs(np.linalg.eigvals(A))) >= 1:
+        raise ValueError("投入产出矩阵不具备稳定的Leontief逆")
     L = np.linalg.inv(np.eye(42) - A)
     f = np.asarray(g) @ L  # kgCO2e/万元产出
     out = {}
     for category, targets in CATEGORY_TO_SECTOR.items():
+        if category in ("electricity", "diesel_combustion"):
+            continue  # 货币型上游强度不得覆盖Scope1燃烧或Scope2电力实物因子
         idx = next((sectors.index(n) for n in targets if n in sectors), None)
         if idx is None:
             continue

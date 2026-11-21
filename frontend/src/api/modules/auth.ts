@@ -50,7 +50,7 @@ export function register(payload: {
   email: string
   password: string
   role?: 'enterprise'
-  company_id?: number | null
+  company_name?: string
 }): Promise<AuthUser> {
   const body: Record<string, string | number> = {
     username: payload.username,
@@ -58,8 +58,8 @@ export function register(payload: {
     password: payload.password,
     role: 'enterprise',
   }
-  if (payload.company_id !== undefined && payload.company_id !== null) {
-    body.company_id = payload.company_id
+  if (payload.company_name) {
+    body.company_name = payload.company_name
   }
   return request<AuthUser>({
     url: '/api/v1/auth/register',

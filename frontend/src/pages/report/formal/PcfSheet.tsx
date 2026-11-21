@@ -138,6 +138,10 @@ export default function PcfSheet({ report, content }: PcfSheetProps) {
       <section className="formal-section">
         <h2>三、核算边界</h2>
         <p>{content.boundary ?? EMPTY_VALUE}</p>
+        {content.study && <>
+          <p>{content.study.name} · 第 {content.study.version} 版 · {content.study.boundary}</p>
+          <p>生产分摊 {formatNumber(content.productionKg, 6)} kgCO₂e · 纳入合计 {formatNumber(content.studyTotal, 6)} kgCO₂e</p>
+        </>}
       </section>
 
       <section className="formal-section">

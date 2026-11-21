@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { companiesApi, documentsApi } from '../../api'
 import { ApiRequestError } from '../../api/client'
 import { readSession } from '../../api/modules/auth'
@@ -18,9 +18,11 @@ import './DocumentsPage.css'
 
 /** 单据管理采用方案 2 · 上传工作区，数据来自 /api/v1/documents */
 export default function DocumentsPage() {
+  const [search] = useSearchParams()
   const session = readSession()
   const role = session?.user.role
   const sessionCompanyId = session?.user.company_id ?? null
+  const canWrite = role !== 'auditor'
   const canSwitchCompany = role === 'admin' || role === 'auditor'
 
   const { companyId: contextCompanyId, setCompanyId } = useCompany()
@@ -62,7 +64,7 @@ export default function DocumentsPage() {
     ) {
       return contextCompanyId
     }
-    return companies[0]?.id ?? null
+    return sessionCompanyId ?? companies[0]?.id ?? null
   }, [canSwitchCompany, sessionCompanyId, contextCompanyId, companies])
 
   const reload = useCallback(async () => {
@@ -115,19 +117,6 @@ export default function DocumentsPage() {
     [reload],
   )
 
-  const handleUploaded = useCallback(
-    (doc: SourceDocument) => {
-      setActionError(null)
-      setNotice(
-        doc.overall_confidence === null
-          ? `${doc.file_name} 已上传并解析`
-          : `${doc.file_name} 已上传并解析 · 综合置信度 ${doc.overall_confidence.toFixed(2)}`,
-      )
-      void reload()
-    },
-    [reload],
-  )
-
   const handleCompanyChange = (value: string) => {
     const next = Number(value)
     if (Number.isFinite(next)) setCompanyId(next)
@@ -142,8 +131,8 @@ export default function DocumentsPage() {
         <main>
           <div className="doc-page-head">
             <div>
-              <h1>单据管理</h1>
-              <p>上传票据、跟踪解析状态，并进入需要人工核对的单据。</p>
+              <h1>智能数据解析</h1>
+              <p>导入凭证与台账，确认原始数据后进入碳核算。</p>
             </div>
             <div className="doc-head-side">
               {canSwitchCompany ? (
@@ -185,13 +174,16 @@ export default function DocumentsPage() {
             </div>
           ) : null}
 
-          <div className="doc-grid">
-            <DocumentsUploadPanel
+          <div className={canWrite ? "doc-grid" : "doc-grid is-readonly"}>
+            {canWrite && <DocumentsUploadPanel
+              key={effectiveCompanyId}
               companyId={effectiveCompanyId}
               onManual={() => setDrawerOpen(true)}
-              onUploaded={handleUploaded}
-            />
+              onCompleted={() => void reload()}
+            />}
             <DocumentsList
+              canWrite={canWrite}
+              initialFilter={search.get('status') === 'review' ? 'review' : 'all'}
               documents={documents}
               queue={queue}
               loading={loading}

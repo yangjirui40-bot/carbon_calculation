@@ -9,6 +9,7 @@ from ..crypto import read_secret
 from ..models import (
     AuditLog,
     BlockchainAttestation,
+    BusinessRecord,
     CalculationRun,
     EmissionFactor,
     SourceDocument,
@@ -38,42 +39,55 @@ def _formula(operation: str) -> str:
 
 
 def get_trace(db, run_id: str) -> dict:
+    from .run_evidence import evidence_counts, inventory_results
+
     run = db.query(CalculationRun).filter(CalculationRun.run_id == run_id).first()
     if not run:
         return {"run_id": run_id, "found": False}
 
     result = run.result or {}
     items = result.get("items", []) if isinstance(result, dict) else []
-    total = result.get("total_kgco2e", 0.0) if isinstance(result, dict) else None
+    total = result.get("total_kgco2e", result.get("total_upstream_emissions_kgco2e")) if isinstance(result, dict) else None
 
     factors = []
     records = []
-    documents = []
+    documents = {}
     snapshot = read_secret(run.request_snapshot) or {}
     snapshot_records = snapshot.get("payload", {}).get("records", [])
 
-    # 因子溯源
+    frozen_factors = snapshot.get("factor_snapshot") or {}
+    # 因子溯源优先使用核算时的加密快照，避免后来修改因子改变历史证据。
     factor_ids = {i.get("factor_id") for i in items} | {r.get("factor_id") for r in snapshot_records}
     for fid in factor_ids:
         if not fid:
             continue
+        frozen = frozen_factors.get(fid)
         f = db.query(EmissionFactor).filter(EmissionFactor.factor_id == fid).first()
-        if f:
-            factors.append({
-                "factor_id": f.factor_id, "category": f.category, "value": f.value,
-                "unit": f.unit, "version": f.version, "origin": f.origin, "is_demo": f.is_demo,
-            })
+        if frozen:
+            factors.append({**frozen, "snapshot_available": True})
+        elif f:
+            factors.append({"factor_id": f.factor_id, "category": f.category, "value": f.value,
+                            "unit": f.unit, "version": f.version, "origin": f.origin, "is_demo": f.is_demo,
+                            "snapshot_available": False, "note": "历史核算未保存因子快照；此处为当前因子，不作历史值证明"})
 
     # 明细记录（从结果 items 回填排放量）
     item_emissions = {i.get("record_id"): i for i in items}
-    for r in snapshot_records:
+    archive, archive_inputs = inventory_results(db, run)
+    legacy_keys = {row.get("id") for row in snapshot_records if "document_id" not in row}
+    legacy_docs = {
+        row.record_no: row.document_id for row in db.query(BusinessRecord).filter(
+            BusinessRecord.company_id == run.company_id, BusinessRecord.record_no.in_(legacy_keys))
+    } if legacy_keys else {}
+    doc_ids = {row.get("document_id", legacy_docs.get(row.get("id"))) for row in snapshot_records} - {None}
+    documents_by_id = {
+        doc.id: doc for doc in db.query(SourceDocument).filter(
+            SourceDocument.company_id == run.company_id, SourceDocument.id.in_(doc_ids))
+    } if doc_ids else {}
+    for line_no, r in enumerate(snapshot_records, 1):
         rec_id = r.get("id")
-        em = item_emissions.get(rec_id, {})
-        doc_id = None
-        from ..models import BusinessRecord
-        br = db.query(BusinessRecord).filter(BusinessRecord.record_no == rec_id).first()
-        if br:
-            doc_id = br.document_id
+        emissions = (archive.get(line_no) if archive_inputs else
+                     item_emissions.get(rec_id, {}).get("emissions_kgco2e"))
+        d = documents_by_id.get(r.get("document_id", legacy_docs.get(rec_id)))
         records.append({
             "record_no": rec_id,
             "period": r.get("period"),
@@ -82,15 +96,22 @@ def get_trace(db, run_id: str) -> dict:
             "quantity": r.get("quantity"),
             "amount": r.get("amount"),
             "factor_id": r.get("factor_id"),
-            "emissions_kgco2e": em.get("emissions_kgco2e"),
+            "document_id": d.id if d else None,
+            "evidence_link": "snapshot" if "document_id" in r else "current_register",
+            "emissions_kgco2e": emissions,
         })
-        if doc_id:
-            d = db.query(SourceDocument).filter(SourceDocument.id == doc_id).first()
-            if d:
-                documents.append({
-                    "id": d.id, "file_name": d.file_name, "doc_type": d.doc_type,
-                    "parse_status": d.parse_status, "ocr_engine": d.ocr_engine,
-                })
+        if d:
+            documents[d.id] = {
+                "id": d.id, "file_name": d.file_name, "doc_type": d.doc_type,
+                "parse_status": d.parse_status, "ocr_engine": d.ocr_engine,
+            }
+    if run.operation == "product":
+        records = [{
+            "record_no": item.get("bom_item_id"), "period": None, "category": item.get("category"),
+            "scope": "scope3", "quantity": None, "amount": item.get("material_amount_cny"),
+            "factor_id": item.get("factor_id"), "emissions_kgco2e": item.get("emissions_kgco2e"),
+            "document_id": None,
+        } for item in items]
 
     audit_logs = [
         {"action": l.action, "actor_user_id": l.actor_user_id, "created_at": l.created_at.isoformat()}
@@ -105,9 +126,10 @@ def get_trace(db, run_id: str) -> dict:
         "formula": _formula(run.operation),
         "factors": factors,
         "records": records,
-        "documents": documents,
+        "documents": list(documents.values()),
         "audit_logs": audit_logs,
         "algorithm_version": run.algorithm_version,
+        "lineage": evidence_counts(db, run),
     }
 
 
@@ -128,7 +150,7 @@ def attest(db, run_id: str) -> dict:
 
     existing = db.query(BlockchainAttestation).filter(BlockchainAttestation.run_id == run_id).first()
     if existing:
-        return _attestation_dict(existing)
+        return _attestation_dict(existing, run)
 
     last = db.query(BlockchainAttestation).order_by(BlockchainAttestation.id.desc()).first()
     digest = hashlib.sha256(_canonical_payload(run)).hexdigest()
@@ -152,10 +174,10 @@ def attest(db, run_id: str) -> dict:
     db.commit()
     db.refresh(att)
     add_audit_log(db, "attest_blockchain", run_id=run_id, detail={"hash": chain_digest, "block_height": block_height})
-    return _attestation_dict(att)
+    return _attestation_dict(att, run)
 
 
-def _attestation_dict(att: BlockchainAttestation) -> dict:
+def _attestation_dict(att: BlockchainAttestation, run=None) -> dict:
     return {
         "run_id": att.run_id,
         "attestation_hash": att.attestation_hash,
@@ -163,7 +185,9 @@ def _attestation_dict(att: BlockchainAttestation) -> dict:
         "data_summary": att.data_summary,
         "block_height": att.block_height,
         "onchain_time": att.onchain_time.isoformat(),
-        "verified": bool(att.attestation_hash) and len(att.attestation_hash) == 64,
+        "verified": bool(run and att.attestation_hash == hashlib.sha256((att.prev_hash + hashlib.sha256(_canonical_payload(run)).hexdigest()).encode()).hexdigest()),
+        "method": "local-sha256-hash-chain",
+        "external_anchor": False,
     }
 
 
@@ -171,11 +195,18 @@ def get_attestation(db, run_id: str) -> dict:
     att = db.query(BlockchainAttestation).filter(BlockchainAttestation.run_id == run_id).first()
     if not att:
         return {"run_id": run_id, "attested": False}
-    return {"attested": True, **_attestation_dict(att)}
+    run = db.query(CalculationRun).filter(CalculationRun.run_id == run_id).first()
+    return {"attested": True, **_attestation_dict(att, run)}
 
 
-def list_audit_logs(db, run_id: str | None = None, limit: int = 100) -> list[dict]:
+def list_audit_logs(db, run_id: str | None = None, limit: int = 100, user=None) -> list[dict]:
     q = db.query(AuditLog).order_by(AuditLog.id.desc())
+    if user is not None and user.role != "admin":
+        from sqlalchemy import or_
+        from ..models import User
+        tenant_runs = db.query(CalculationRun.run_id).filter(CalculationRun.company_id == user.company_id) if user.company_id is not None else db.query(CalculationRun.run_id).filter(False)
+        tenant_users = db.query(User.id).filter(User.company_id == user.company_id) if user.company_id is not None else db.query(User.id).filter(User.id == user.id)
+        q = q.filter(or_(AuditLog.run_id.in_(tenant_runs), AuditLog.actor_user_id.in_(tenant_users)))
     if run_id:
         q = q.filter(AuditLog.run_id == run_id)
     logs = q.limit(limit).all()

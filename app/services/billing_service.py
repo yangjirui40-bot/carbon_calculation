@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 
 from ..models import Plan, Subscription
+from ..models.enterprise_controls import UsageEvent
+from .inventory import lock_company
 
 FREE_PLAN = "free"
 
@@ -42,12 +44,12 @@ def get_or_create_subscription(db, company_id: int) -> Subscription:
         end = datetime.now(timezone.utc) + timedelta(days=365)
         sub = Subscription(company_id=company_id, plan_code=FREE_PLAN, status="trial", end_date=end)
         db.add(sub)
-        db.commit()
-        db.refresh(sub)
+        db.flush()
     return sub
 
 
 def subscribe(db, company_id: int, plan_code: str) -> Subscription:
+    lock_company(db, company_id)
     plan = get_plan(db, plan_code)
     sub = db.query(Subscription).filter(Subscription.company_id == company_id).first()
     end = datetime.now(timezone.utc) + timedelta(days=365)
@@ -55,6 +57,8 @@ def subscribe(db, company_id: int, plan_code: str) -> Subscription:
         sub = Subscription(company_id=company_id, plan_code=plan_code, status="active",
                            start_date=datetime.now(timezone.utc), end_date=end)
         db.add(sub)
+    elif sub.plan_code == plan_code and sub.end_date and (sub.end_date.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc)):
+        return sub
     else:
         sub.plan_code = plan_code
         sub.status = "active"
@@ -71,7 +75,13 @@ def enforce_quota(db, company_id: int | None, kind: str) -> Subscription | None:
     """核算/单据配额控制：超限抛出 402。"""
     if company_id is None:
         return None
+    lock_company(db, company_id)
     sub = get_or_create_subscription(db, company_id)
+    expires = sub.end_date
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if sub.status not in ("trial", "active") or expires <= datetime.now(timezone.utc):
+        raise HTTPException(402, "订阅已到期，请续订后继续")
     plan = get_plan(db, sub.plan_code)
     if kind == "calculation":
         quota, used = plan.quota_calculations, sub.usage_calculations
@@ -83,7 +93,8 @@ def enforce_quota(db, company_id: int | None, kind: str) -> Subscription | None:
         if used >= quota:
             raise HTTPException(status_code=402, detail=f"单据配额已用尽（{used}/{quota}），请升级套餐")
         sub.usage_documents = used + 1
-    db.commit()
+    db.add(UsageEvent(company_id=company_id, subscription_id=sub.id, usage_type=kind, quantity=1))
+    db.flush()
     return sub
 
 

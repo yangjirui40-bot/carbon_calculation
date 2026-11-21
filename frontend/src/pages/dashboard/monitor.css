@@ -1,0 +1,55 @@
+.dash-page .dash-context {margin:12px 0;min-height:40px;padding:7px 13px}
+.bi-strip {display:grid;grid-template-columns:1.2fr 1fr 1fr;background:white;border:1px solid #cfdbdf;border-radius:10px;overflow:hidden;margin:14px 0 12px;color:#173246;font-variant-numeric:tabular-nums}
+.bi-lead,.bi-reading {min-width:0;padding:19px clamp(16px,2vw,32px);display:flex;flex-direction:column;gap:5px}
+.bi-lead {background:#103f43;color:#fff;border-left:5px solid #4dc5b1}
+.bi-strip span,.bi-strip footer {font-size:13px;line-height:1.5}
+.bi-strip footer {color:#536a76;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bi-lead footer,.bi-lead>span,.bi-lead small {color:#c5e2e1}
+.bi-lead footer i{width:1px;height:12px;background:#8ab3b1}
+.bi-strip strong {font:650 clamp(25px,2.4vw,38px)/1.2 var(--font-family-number,system-ui);letter-spacing:-.045em}
+.bi-lead strong {font-size:clamp(35px,3.2vw,52px)}
+.bi-reading {justify-content:center;border-left:1px solid #dce5e8}
+.bi-reading>span {color:#475e6b}
+.bi-strip .bi-state{font-size:clamp(20px,2vw,30px);letter-spacing:0;color:#2e645c}
+.bi-strip .over {color:#a83d2c}.bi-strip .incomplete,.bi-strip .unset {color:#805b1b}
+.bi-top {display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr);gap:16px;align-items:stretch;margin:16px 0}
+.bi-top>.swiss-section,.bi-panel,.dash-page #bi-budget>.swiss-section{margin:0;background:white;border:1px solid #cfdbdf;border-radius:9px;padding:18px 20px;min-width:0}
+.bi-panel header {display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:14px;border-bottom:1px solid #dfe7e9}
+.bi-panel h2{color:#183647;font-size:19px;line-height:1.4;margin:0;font-weight:650}
+.bi-panel header small,.bi-panel header>span,.bi-muted{font-size:13px;color:#526875;line-height:1.6}
+.bi-review a {display:flex;gap:10px;align-items:baseline;padding:14px 0;border-bottom:1px solid #e6ecee;color:#214354;text-decoration:none}
+.bi-review a:last-child{border:0;padding-bottom:0}
+.bi-review em{white-space:nowrap;font-size:11px;line-height:20px;padding:0 6px;border-radius:3px;background:#e8eff3;color:#425f70;font-style:normal}
+.bi-review [data-level=urgent]{color:#943728;background:#fae7df}.bi-review [data-level=watch]{color:#79501a;background:#faefd9}
+.bi-review a b,.bi-review a small{display:block}.bi-review a b{font-size:15px}.bi-review a small{color:#526875;font-size:12px;margin-top:4px}.bi-review a i{margin-left:auto}
+.bi-drivers{margin:16px 0}.bi-switch{display:inline-flex;border:1px solid #c7d6d9;border-radius:5px;overflow:hidden;flex-shrink:0}
+.bi-switch button{background:#fff;border:0;color:#43636c;padding:7px 11px}.bi-switch button[aria-pressed=true]{background:#17575a;color:white}
+.bi-dr-head,.bi-driver{display:grid;grid-template-columns:minmax(120px,1fr) minmax(138px,.9fr) minmax(128px,1fr);gap:18px;align-items:center}
+.bi-dr-head{font-size:12px;color:#556c77;padding:10px 0}.bi-dr-head span:last-child{text-align:right}
+.bi-driver{width:100%;border:0;border-top:1px solid #e7edef;background:transparent;padding:10px 0;text-align:left;color:#1e3c48;text-decoration:none}
+.bi-driver small,.bi-delta {font-variant-numeric:tabular-nums}.bi-driver small{color:#536775;font-size:13px}
+.bi-delta {position:relative;isolation:isolate;text-align:right;font-weight:650;font-size:14px;padding:4px 8px}
+.bi-delta i {position:absolute;right:0;inset-block:0;z-index:-1;background:#d9efe8;border-right:3px solid #35846f}
+.bi-delta[data-up=true] i {background:#fae4d7;border-color:#b85a38}
+.bi-driver:hover,.bi-review a:hover {background:#f4f8f8}.bi-actions{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}
+.bi-actions a{display:flex;align-items:center;gap:26px;padding:9px 13px;background:#fff;border:1px solid #c7d6d9;border-radius:5px;color:#1c5559;font-weight:600}
+.bi-actions span{margin-left:auto}.dash-page :is(a,button,select):focus-visible{outline:3px solid #1769a7;outline-offset:2px}
+#bi-budget{scroll-margin-top:76px}.bi-top .dash-card__note,.bi-top .dash-data{font-size:12px}
+@media(max-width:1050px){.bi-top{grid-template-columns:minmax(0,1.4fr) minmax(215px,1fr)}.bi-panel,.bi-top>.swiss-section{padding:14px}.bi-strip footer{font-size:12px}}
+@media(max-width:760px){.bi-top{grid-template-columns:1fr}.bi-strip{grid-template-columns:1fr 1fr}.bi-lead{grid-column:1/-1}.bi-reading{padding:12px}.bi-dr-head,.bi-driver{grid-template-columns:minmax(70px,1fr) minmax(90px,1fr) minmax(74px,.8fr);gap:5px}.bi-dr-head,.bi-driver small{font-size:11px}.bi-driver b,.bi-delta{font-size:12px}.bi-panel h2{font-size:17px}.bi-drivers header{align-items:flex-start}.bi-switch button{padding:6px}}
+
+.bi-record-link,.bi-review .bi-insight a,.bi-review .bi-sim-link {color:#115d64;font-weight:600}
+.bi-record-link {border:0;background:transparent;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.bi-insight {background:#f0f6f5;border-left:3px solid #478b84;padding:12px 14px;margin:18px 0 8px;color:#27494b}
+.bi-insight>span {font-size:12px;color:#476664}.bi-insight p {font-size:15px;margin:5px 0}
+.bi-insight strong {font-size:20px;font-variant-numeric:tabular-nums}
+.bi-review .bi-insight a,.bi-review .bi-sim-link {font-size:13px;border:0;padding:6px 0;justify-content:space-between}
+.bi-bar {position:relative;display:block;flex:1;height:16px;border:0;background:linear-gradient(90deg,transparent calc(50% - .5px),#738985 50%,transparent calc(50% + 1px))}
+.bi-delta{display:flex;gap:7px;align-items:center;justify-content:flex-end;padding:3px 0}
+.bi-delta .bi-bar i {right:50%;left:auto;z-index:0;background:#4d927e;inset-block:3px;border:0}
+.bi-delta[data-up=true] .bi-bar i {right:auto;left:50%;background:#ba6547}
+#bi-drivers{scroll-margin-top:76px}
+@media(max-width:760px){.bi-bar{display:none}.dash-page>.swiss-tabs{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap}.bi-strip small{font-size:11px}.bi-review .bi-sim-link{padding:10px 0}}
+
+@media(min-width:761px){.bi-delta{display:grid;grid-template-columns:minmax(20px,1fr) 8ch auto}.bi-bar{width:100%}}
+@media(max-width:760px){.dash-page>.swiss-tabs{column-gap:8px;justify-content:space-between}.dash-page>.swiss-tabs>.swiss-tabs__tab{padding-inline:0;font-size:11px}}

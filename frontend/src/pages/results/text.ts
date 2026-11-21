@@ -22,9 +22,9 @@ export function runStatusLabel(status: string | null | undefined): string {
   return RUN_STATUS_LABELS[status] ?? status
 }
 
-/** 页面不展示含“模拟 / 演示 / 非审计”字样的文案（2026-11-04 项目决定）。 */
+/** 保留因子来源和适用性提示，便于使用者判断结果。 */
 export function visibleWarnings(warnings: string[] | null | undefined): string[] {
-  return (warnings ?? []).filter((warning) => !/模拟|演示|非审计/.test(warning))
+  return warnings ?? []
 }
 
 export function errorMessage(error: unknown): string {

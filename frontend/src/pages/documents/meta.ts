@@ -17,6 +17,8 @@ export const DOC_TYPE_OPTIONS = [
 export type DocTypeOption = (typeof DOC_TYPE_OPTIONS)[number]['value']
 
 export function docTypeLabel(value: string | null | undefined): string {
+  if (value === 'revenue_evidence') return '收入底稿'
+  if (value === 'energy_certificate') return '绿电凭证'
   if (!value) return '—'
   return DOC_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? value
 }
@@ -43,6 +45,7 @@ export const VERIFY_STATUS_LABELS: Record<VerifyStatus, string> = {
 export type DocStatusTone = 'ok' | 'pending' | 'fail' | 'review'
 
 export function docStatus(doc: SourceDocument): { label: string; tone: DocStatusTone } {
+  if (['energy_certificate','revenue_evidence'].includes(doc.doc_type)) return { label: '凭证原件', tone: 'ok' }
   if (doc.parse_status === 'failed') return { label: '解析失败', tone: 'fail' }
   if (doc.parse_status === 'uploaded') return { label: '待解析', tone: 'pending' }
   if (doc.parse_status === 'parsing') return { label: '解析中', tone: 'pending' }

@@ -7,18 +7,18 @@ import { cssToken } from './cssToken'
  */
 
 const SWISS_FALLBACKS = {
-  '--paper': '#f1eee5',
-  '--ink': '#14211c',
-  '--muted': '#6d726a',
-  '--rule': '#d3ccbd',
-  '--rule-soft': '#e2dccf',
-  '--accent': '#0e3b2e',
-  '--lime': '#c9f45b',
-  '--fail': '#a33a2a',
-  '--warn': '#9a5b13',
-  '--s1': '#1f4e79',
-  '--s2': '#14532d',
-  '--s3': '#b45309',
+  '--paper': '#f4f7fb',
+  '--ink': '#132638',
+  '--muted': '#526578',
+  '--rule': '#d9e2ed',
+  '--rule-soft': '#e8eef5',
+  '--accent': '#1756a4',
+  '--lime': '#84e0d4',
+  '--fail': '#a6343f',
+  '--warn': '#8b550e',
+  '--s1': '#2758ba',
+  '--s2': '#008078',
+  '--s3': '#7556ba',
 } as const
 
 /** tokens.css 的碳排放强度色阶（绿→红） */
