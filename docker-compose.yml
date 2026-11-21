@@ -4,11 +4,11 @@ services:
     container_name: carbonspeed-db
     environment:
       POSTGRES_USER: carbonspeed
-      POSTGRES_PASSWORD: carbonspeed_2026_Db_x7KpQ2
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: carbonspeed
       TZ: Asia/Shanghai
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - carbonspeed-db-data:/var/lib/postgresql
     healthcheck:
@@ -22,7 +22,7 @@ services:
     image: redis:7-alpine
     container_name: carbonspeed-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     restart: unless-stopped
 
   backend:
@@ -31,9 +31,9 @@ services:
       dockerfile: Dockerfile
     container_name: carbonspeed-backend
     environment:
-      DATABASE_URL: postgresql+psycopg2://carbonspeed:carbonspeed_2026_Db_x7KpQ2@db:5432/carbonspeed
-      SECRET_KEY: carbonspeed-prod-secret-please-change
-      DATA_ENC_KEY: carbonspeed-data-enc-key-change-me
+      DATABASE_URL: postgresql+psycopg2://carbonspeed:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/carbonspeed
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DATA_ENC_KEY: ${DATA_ENC_KEY:-}
       HF_ENDPOINT: https://hf-mirror.com
       REDIS_URL: redis://redis:6379/0
       RATE_LIMIT_BACKEND: redis
@@ -41,7 +41,7 @@ services:
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-deepseek-flash}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -59,7 +59,7 @@ services:
       - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/alerts.yml:/etc/prometheus/alerts.yml:ro
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     restart: unless-stopped
 
   alertmanager:
@@ -67,7 +67,7 @@ services:
     container_name: carbonspeed-alertmanager
     profiles: ["monitoring"]
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     restart: unless-stopped
 
   grafana:
@@ -75,9 +75,9 @@ services:
     container_name: carbonspeed-grafana
     profiles: ["monitoring"]
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
     restart: unless-stopped
 
 volumes:

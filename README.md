@@ -40,6 +40,8 @@ deploy.compose.cohost.yml  现有服务器部署配置
 python3 scripts/start_local.py
 ```
 
+旧版 `docker-compose.yml` 仅供隔离开发环境；其数据库、Redis、后端与监控端口均只监听本机。启用前须在未入库的 `.env` 中设置独立强密码与密钥，不能使用 `.env.example` 的占位值。
+
 脚本需要能访问Docker；本电脑的启动器会使用已安装的Ubuntu-22.04和root运行Docker。首次创建私密配置，之后保留配置和数据库。新电脑需安装Docker；不存在预构建镜像时Compose按Dockerfile构建，需下载依赖。正式步骤见启动说明。
 
 ## 结果的适用范围

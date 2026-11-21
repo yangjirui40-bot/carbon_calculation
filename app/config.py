@@ -22,11 +22,8 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     API_PREFIX: str = "/api/v1"
 
-    # 数据库：默认指向本地 PostgreSQL（WSL Docker 容器 carbonspeed-db）
-    DATABASE_URL: str = (
-        "postgresql+psycopg2://carbonspeed:carbonspeed_2026_Db_x7KpQ2"
-        "@localhost:5433/carbonspeed"
-    )
+    # 数据库连接必须由未入库的 .env 或部署环境提供。
+    DATABASE_URL: str
 
     DB_TENANT_ISOLATION_ENABLED: bool = False
 
